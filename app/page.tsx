@@ -77,7 +77,8 @@ export default function Home() {
   };
 
   const fetchUpbitTickers = async () => {
-    const marketsRes = await axios.get('https://api.upbit.com/v1/market/all');
+    const marketsRes = await axios.get('/api/upbit/market-all');
+
     const krwMarkets = marketsRes.data.filter((m: any) => m.market.startsWith('KRW-')).map((m: any) => m.market);
 
     const tickersRes = await axios.get('https://api.upbit.com/v1/ticker', {
@@ -95,7 +96,7 @@ export default function Home() {
   };
 
   const fetchBithumbTickers = async () => {
-    const res = await axios.get('https://api.bithumb.com/public/ticker/ALL_KRW');
+    const res = await axios.get('/api/bithumb/ticker');
     const data = res.data.data;
     const tickers = Object.keys(data)
       .filter((key) => key !== 'date')
