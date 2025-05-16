@@ -114,9 +114,15 @@ export default function Home() {
   };
 
   const fetchBinanceTickers = async () => {
-    const res = await axios.get('/api/binance');
-    setBinanceTickers(prev => triggerFlashOnChange(prev, res.data));
+    try {
+      const res = await axios.get('https://api.binance.com/api/v3/ticker/price');
+      console.log('🔥 Binance 응답:', res.data);  // 콘솔 확인용
+      setBinanceTickers(prev => triggerFlashOnChange(prev, res.data));
+    } catch (error) {
+      console.error('❌ Binance fetch 실패:', error);
+    }
   };
+  
 
   const calculateKimp = (krwPrice: number, binancePrice: number | null): number | null => {
     if (binancePrice === null || exchangeRate === null) return null;
