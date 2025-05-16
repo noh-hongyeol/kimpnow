@@ -41,11 +41,11 @@ export const metadata: Metadata = {
   },
 };
 
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">
       <head>
+        <meta name="naver-site-verification" content="4346a8b10d13c7e2c15710873affe30f3dc9e077" />
         <link rel="icon" href="/favicon.png" />
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
