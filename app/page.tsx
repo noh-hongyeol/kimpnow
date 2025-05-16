@@ -263,6 +263,7 @@ export default function Home() {
         </div>
 
         <div className="w-full max-w-5xl mx-auto">
+        <div className="overflow-x-auto">
           <table className="w-full border border-gray-700 text-sm leading-tight">
             <thead>
               <tr className="bg-gray-800">
@@ -323,6 +324,7 @@ export default function Home() {
             </tbody>
           </table>
         </div>
+       </div>
       </div>
 
       <div className="text-center text-s text-gray-500 space-y-4 mt-8">
