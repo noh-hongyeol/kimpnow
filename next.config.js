@@ -1,11 +1,10 @@
-/** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   async rewrites() {
     return [
       {
         source: '/robots.txt',
-        destination: '/robots-kimp.txt',
+        destination: '/api/robots', // 여기만 바뀜
       },
     ];
   },
