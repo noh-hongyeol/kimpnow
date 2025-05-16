@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://kimpnow.com
+
+# Sitemaps
+Sitemap: https://kimpnow.com/sitemap.xml
