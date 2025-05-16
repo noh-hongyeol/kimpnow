@@ -3,4 +3,4 @@ Allow: /
 Sitemap: https://kimpnow.com/sitemap-0.xml
 
 # Change token for verification
-X-Robots-Check: updated-2025-05-16-21-53
+X-Robots-Check: updated-2025-05-16-21-53 
