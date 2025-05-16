@@ -152,8 +152,9 @@ export default function Home() {
   };
 
   const formatToEok = (value: number) => {
-    return `${(value / 100000000).toFixed(2)}억`;
+    return `${Math.floor(value / 100000000)}억`;
   };
+  
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -301,8 +302,11 @@ export default function Home() {
     className="w-5 h-5"
     onError={(e) => (e.currentTarget.style.display = 'none')}
   />
-  <span>{ticker.market.replace('KRW-', '')}</span>
+  <span className={`${ticker.market.replace('KRW-', '').length > 6 ? 'text-[10px]' : 'text-xs'}`}>
+    {ticker.market.replace('KRW-', '')}
+  </span>
 </td>
+
 <td className={`p-2 text-right ${ticker.change_rate >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
   {typeof ticker.change_rate === 'number' ? ticker.change_rate.toFixed(2) + '%' : 'N/A'}
 </td>
