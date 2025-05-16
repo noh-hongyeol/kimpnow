@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "김프 실시간 비교 | KimpNow",
-  description: "업비트, 빗썸, 바이낸스 실시간 김치프리미엄 비교 사이트. 실시간 환율 포함.",
+  title: "김프 실시간 비교 | 업비트, 바이낸스, 빗썸 가격 자동 분석",
+  description: "지금 바로 김치프리미엄을 비교하세요. 업비트, 빗썸, 바이낸스 실시간 가격/거래량을 자동 분석합니다. 실시간 환율 포함!",
   metadataBase: new URL("https://kimpnow.com"),
   openGraph: {
     title: "김프 실시간 | KimpNow",
@@ -41,12 +41,13 @@ export const metadata: Metadata = {
   },
 };
 
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">
       <head>
         <meta name="naver-site-verification" content="4346a8b10d13c7e2c15710873affe30f3dc9e077" />
-        <link rel="icon" href="/favicon.png" />
+        <link rel="icon" href="/favicon.ico" type="image/x-icon" />
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
