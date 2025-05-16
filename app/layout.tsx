@@ -50,25 +50,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-        {/* ✅ GA4 추적 코드 삽입 */}
-        {process.env.NODE_ENV === "production" && (
-          <>
-            <script
-              async
-              src="https://www.googletagmanager.com/gtag/js?id=G-NWD7ZM5M6C"
-            ></script>
-            <script
-              dangerouslySetInnerHTML={{
-                __html: `
-                  window.dataLayer = window.dataLayer || [];
-                  function gtag(){dataLayer.push(arguments);}
-                  gtag('js', new Date());
-                  gtag('config', 'G-NWD7ZM5M6C');
-                `,
-              }}
-            />
-          </>
-        )}
+        {/* ✅ GA 추적코드 – 조건문 없이 항상 삽입 */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-NWD7ZM5M6C"></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-NWD7ZM5M6C');
+            `,
+          }}
+        />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
@@ -76,3 +69,4 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
+
