@@ -264,22 +264,30 @@ export default function Home() {
 
         <div className="w-full max-w-5xl mx-auto">
          <div className="overflow-x-auto">
-          <table className="w-full border border-gray-700 text-sm leading-tight">
-            <thead>
-              <tr className="bg-gray-800">
-              <th className="p-2 cursor-pointer" onClick={() => handleSort('market')}>
-  코인 {renderSortArrow('market')}
-</th>
-<th className="p-2 cursor-pointer" onClick={() => handleSort('change_rate')}>
-  변화율(24h) {renderSortArrow('change_rate')}
-</th>
+         <table className="w-full border border-gray-700 text-sm md:text-sm text-xs leading-tight">
+         <thead>
+  <tr className="bg-gray-800">
+    <th className="md:p-2 p-1 text-left cursor-pointer" onClick={() => handleSort('market')}>
+      코인 {renderSortArrow('market')}
+    </th>
+    <th className="md:p-2 p-1 text-right cursor-pointer" onClick={() => handleSort('change_rate')}>
+      변화율(24h) {renderSortArrow('change_rate')}
+    </th>
+    <th className="md:p-2 p-1 text-right cursor-pointer" onClick={() => handleSort('acc_trade_price_24h')}>
+      거래량 {renderSortArrow('acc_trade_price_24h')}
+    </th>
+    <th className="md:p-2 p-1 text-right cursor-pointer" onClick={() => handleSort('trade_price')}>
+      {baseExchange} 가격 {renderSortArrow('trade_price')}
+    </th>
+    <th className="md:p-2 p-1 text-right cursor-pointer" onClick={() => handleSort('binance_price')}>
+      Binance 가격 {renderSortArrow('binance_price')}
+    </th>
+    <th className="md:p-2 p-1 text-right cursor-pointer" onClick={() => handleSort('kimp')}>
+      김프(%) {renderSortArrow('kimp')}
+    </th>
+  </tr>
+</thead>
 
-                <th className="p-2 cursor-pointer" onClick={() => handleSort('acc_trade_price_24h')}>거래량 {renderSortArrow('acc_trade_price_24h')}</th>
-                <th className="p-2 cursor-pointer" onClick={() => handleSort('trade_price')}>{baseExchange} 가격 {renderSortArrow('trade_price')}</th>
-                <th className="p-2 cursor-pointer" onClick={() => handleSort('binance_price')}>Binance 가격 {renderSortArrow('binance_price')}</th>
-                <th className="p-2 cursor-pointer" onClick={() => handleSort('kimp')}>김프(%) {renderSortArrow('kimp')}</th>
-              </tr>
-            </thead>
             <tbody>
               {sortedTickers.map(ticker => {
                 const isFlashing = flashStates[ticker.market];
@@ -300,20 +308,20 @@ export default function Home() {
 </td>
 
 
-                    <td className="p-2 text-right">{formatToEok(ticker.acc_trade_price_24h)}</td>
+                    <td className="md:p-2 p-1 text-right">{formatToEok(ticker.acc_trade_price_24h)}</td>
                     
-                    <td className="p-2 text-right">
+                    <td className="md:p-2 p-1 text-right">
   <span className={flashClass}>
     {ticker.trade_price.toLocaleString() + ' ₩'}
   </span>
 </td>
-<td className="p-2 text-right">
+<td className="md:p-2 p-1 text-right">
   <span className={flashClass}>
     {ticker.binance_price !== null ? ticker.binance_price.toFixed(2) + ' $' : 'N/A'}
   </span>
 </td>
 
-                    <td className="p-2 text-right">
+                    <td className="md:p-2 p-1 text-right">
                       <span className={`${flashClass} ${ticker.kimp !== null ? (ticker.kimp >= 0 ? 'text-red-500' : 'text-blue-500') : ''}`}>
                         {ticker.kimp !== null ? ticker.kimp.toFixed(2) + '%' : 'N/A'}
                       </span>
