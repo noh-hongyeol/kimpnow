@@ -81,9 +81,10 @@ export default function Home() {
 
     const krwMarkets = marketsRes.data.filter((m: any) => m.market.startsWith('KRW-')).map((m: any) => m.market);
 
-    const tickersRes = await axios.get('https://api.upbit.com/v1/ticker', {
+    const tickersRes = await axios.get('/api/upbit', {
       params: { markets: krwMarkets.join(',') },
     });
+    
 
     const tickers = tickersRes.data.map((item: any) => ({
       market: item.market,
