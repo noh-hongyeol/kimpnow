@@ -121,7 +121,7 @@ export default function Home() {
   const calculateKimp = (krwPrice: number, binancePrice: number | null): number | null => {
     if (binancePrice === null || exchangeRate === null) return null;
     const usdToKrwPrice = binancePrice * exchangeRate;
-    return ((krwPrice - usdToKrwPrice) / usdToKrwPrice) * 100;
+    return ((krwPrice - usdToKrwPrice) / usdToKrwPrice) * 100; //
   };
 
   const getBinancePrice = (symbol: string): number | null => {
