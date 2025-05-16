@@ -125,10 +125,10 @@ export default function Home() {
   };
 
   const getBinancePrice = (symbol: string): number | null => {
-    const symbolName = symbol.replace('KRW-', '') + 'USDT';
+    const symbolName = symbol.replace('KRW-', '').toUpperCase() + 'USDT';
     const ticker = binanceTickers.find(t => t.symbol === symbolName);
     return ticker ? parseFloat(ticker.price) : null;
-  };
+  };  
 
   const handleSort = (key: typeof sortKey) => {
     if (sortKey === key) {
