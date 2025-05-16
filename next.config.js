@@ -1,10 +1,15 @@
 const nextConfig = {
   reactStrictMode: true,
-  async rewrites() {
+  async headers() {
     return [
       {
         source: '/robots.txt',
-        destination: '/api/robots', // 여기만 바뀜
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          },
+        ],
       },
     ];
   },
