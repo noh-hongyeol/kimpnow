@@ -5,7 +5,7 @@ const nextConfig = {
     return [
       {
         source: '/robots.txt',
-        destination: '/robots.txt',
+        destination: '/robots-kimp.txt',
       },
     ];
   },
