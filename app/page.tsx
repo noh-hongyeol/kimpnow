@@ -263,7 +263,7 @@ export default function Home() {
         </div>
 
         <div className="w-full max-w-5xl mx-auto">
-        <div className="overflow-x-auto">
+         <div className="overflow-x-auto">
           <table className="w-full border border-gray-700 text-sm leading-tight">
             <thead>
               <tr className="bg-gray-800">
