@@ -239,13 +239,13 @@ export default function Home() {
 
           <div className="flex justify-center items-center">
             <a href="https://accounts.binance.com/register?ref=NJ3Y7YUZ" target="_blank" rel="noopener noreferrer">
-              <img src="/binance-banner.png" alt="바이낸스 배너" className="h-[200px] object-contain" />
+              <img src="/binance-banner1.png" alt="바이낸스 배너" className="h-[200px] object-contain" />
             </a>
           </div>
 
           <div className="flex justify-center items-center">
             <a href="https://www.bybit.com/invite?ref=OLVJA" target="_blank" rel="noopener noreferrer">
-              <img src="/bybit-banner.png" alt="바이빗 배너" className="h-[200px] object-contain" />
+              <img src="/bybit-banner1.png" alt="바이빗 배너" className="h-[200px] object-contain" />
             </a>
           </div>
         </div>
