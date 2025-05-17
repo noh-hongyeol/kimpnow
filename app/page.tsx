@@ -237,17 +237,19 @@ export default function Home() {
             </table>
           </div>
 
-          <div className="flex justify-center items-center">
-            <a href="https://accounts.binance.com/register?ref=NJ3Y7YUZ" target="_blank" rel="noopener noreferrer">
-              <img src="/binance-banner1.png" alt="바이낸스 배너" className="h-[200px] object-contain" />
-            </a>
-          </div>
+          <div className="flex justify-center items-center w-auto flex-shrink-0">
+  <a href="https://accounts.binance.com/register?ref=NJ3Y7YUZ" target="_blank" rel="noopener noreferrer">
+    <img src="/binance-banner2.png" alt="바이낸스 배너" className="w-[400px] h-[112px] object-contain" />
+  </a>
+</div>
 
-          <div className="flex justify-center items-center">
-            <a href="https://www.bybit.com/invite?ref=OLVJA" target="_blank" rel="noopener noreferrer">
-              <img src="/bybit-banner1.png" alt="바이빗 배너" className="h-[200px] object-contain" />
-            </a>
-          </div>
+
+<div className="flex justify-center items-center w-auto flex-shrink-0">
+  <a href="https://www.bybit.com/invite?ref=OLVJA" target="_blank" rel="noopener noreferrer">
+    <img src="/bybit-banner2.png" alt="바이빗 배너" className="w-[400px] h-[112px] object-contain" />
+  </a>
+</div>
+
         </div>
         
         <h1 className="text-4xl font-bold mb-6 text-center">김프 실시간</h1>
