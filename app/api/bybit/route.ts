@@ -1,12 +1,8 @@
 export async function GET() {
   try {
-    const res = await fetch('https://api.bybit.com/v5/market/tickers?category=linear', {
+    const res = await fetch('https://corsproxy.io/?https://api.bybit.com/v5/market/tickers?category=linear', {
       headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36',
         'Accept': 'application/json',
-        'Referer': 'https://kimpnow.com/',
-        'Origin': 'https://kimpnow.com',
       },
       cache: 'no-store',
     });
