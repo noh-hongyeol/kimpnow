@@ -15,6 +15,12 @@ interface BinanceTickerData {
   price: string;
 }
 
+interface BybitTickerData {
+  symbol: string;
+  lastPrice: string;
+}
+
+
 export default function Home() {
   
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
@@ -22,7 +28,8 @@ export default function Home() {
   const [isFlashingUpdate, setIsFlashingUpdate] = useState(false);
   const [bithumbTickers, setBithumbTickers] = useState<TickerData[]>([]);
   const [binanceTickers, setBinanceTickers] = useState<BinanceTickerData[]>([]);
-  const [bybitTickers, setBybitTickers] = useState<BinanceTickerData[]>([]);
+const [bybitTickers, setBybitTickers] = useState<BybitTickerData[]>([]);
+
 
   const [domesticExchange, setDomesticExchange] = useState<'Upbit' | 'Bithumb'>('Upbit');
   const [foreignExchange, setForeignExchange] = useState<'Binance' | 'Bybit'>('Binance');
@@ -143,10 +150,17 @@ export default function Home() {
 
   const getForeignPrice = (symbol: string): number | null => {
   const symbolName = symbol.replace('KRW-', '').toUpperCase() + 'USDT';
-  const tickers = foreignExchange === 'Binance' ? binanceTickers : bybitTickers;
-  const ticker = tickers.find(t => t.symbol === symbolName);
-  return ticker ? parseFloat(ticker.price) : null;
+
+  if (foreignExchange === 'Binance') {
+    const ticker = binanceTickers.find(t => t.symbol === symbolName);
+    return ticker ? parseFloat(ticker.price) : null;
+  } else {
+    const ticker = bybitTickers.find(t => t.symbol === symbolName);
+    return ticker ? parseFloat(ticker.lastPrice) : null;
+  }
 };
+
+
 
   
   
@@ -171,14 +185,20 @@ export default function Home() {
   
 
   useEffect(() => {
-    const fetchAll = async () => {
-      await Promise.all([fetchExchangeRate(), fetchUpbitTickers(), fetchBithumbTickers(),fetchBinanceTickers(), fetchBybitTickers(), ]);
-    };
-  
-    fetchAll();
-    const interval = setInterval(fetchAll, 5000);
-    return () => clearInterval(interval);
-  }, []);
+  const fetchAll = async () => {
+    await Promise.all([
+      fetchExchangeRate(),
+      fetchUpbitTickers(),
+      fetchBithumbTickers(),
+      fetchBinanceTickers(),
+      fetchBybitTickers(), // ✅ 이거 진짜 실행됐는지 확인!
+    ]);
+  };
+  fetchAll();
+  const interval = setInterval(fetchAll, 5000);
+  return () => clearInterval(interval);
+}, []);
+
   
 
   const tickers = domesticExchange === 'Upbit' ? upbitTickers : bithumbTickers;
