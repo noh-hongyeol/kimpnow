@@ -22,7 +22,10 @@ export default function Home() {
   const [isFlashingUpdate, setIsFlashingUpdate] = useState(false);
   const [bithumbTickers, setBithumbTickers] = useState<TickerData[]>([]);
   const [binanceTickers, setBinanceTickers] = useState<BinanceTickerData[]>([]);
-  const [baseExchange, setBaseExchange] = useState<'Upbit' | 'Bithumb'>('Upbit');
+  const [bybitTickers, setBybitTickers] = useState<BinanceTickerData[]>([]);
+
+  const [domesticExchange, setDomesticExchange] = useState<'Upbit' | 'Bithumb'>('Upbit');
+  const [foreignExchange, setForeignExchange] = useState<'Binance' | 'Bybit'>('Binance');
   const [sortKey, setSortKey] = useState<'market' | 'change_rate' | 'acc_trade_price_24h' | 'trade_price' | 'binance_price' | 'kimp'>('acc_trade_price_24h');
 
 
@@ -123,7 +126,14 @@ export default function Home() {
       console.error('❌ Binance fetch 실패:', error);
     }
   };
-  
+  const fetchBybitTickers = async () => {
+  try {
+    const res = await axios.get('/api/bybit');
+    setBybitTickers(prev => triggerFlashOnChange(prev, res.data));
+  } catch (error) {
+    console.error('❌ Bybit fetch 실패:', error);
+  }
+};
 
   const calculateKimp = (krwPrice: number, binancePrice: number | null): number | null => {
     if (binancePrice === null || exchangeRate === null) return null;
@@ -131,11 +141,15 @@ export default function Home() {
     return ((krwPrice - usdToKrwPrice) / usdToKrwPrice) * 100; //
   };
 
-  const getBinancePrice = (symbol: string): number | null => {
-    const symbolName = symbol.replace('KRW-', '').toUpperCase() + 'USDT';
-    const ticker = binanceTickers.find(t => t.symbol === symbolName);
-    return ticker ? parseFloat(ticker.price) : null;
-  };  
+  const getForeignPrice = (symbol: string): number | null => {
+  const symbolName = symbol.replace('KRW-', '').toUpperCase() + 'USDT';
+  const tickers = foreignExchange === 'Binance' ? binanceTickers : bybitTickers;
+  const ticker = tickers.find(t => t.symbol === symbolName);
+  return ticker ? parseFloat(ticker.price) : null;
+};
+
+  
+  
 
   const handleSort = (key: typeof sortKey) => {
     if (sortKey === key) {
@@ -158,7 +172,7 @@ export default function Home() {
 
   useEffect(() => {
     const fetchAll = async () => {
-      await Promise.all([fetchExchangeRate(), fetchUpbitTickers(), fetchBithumbTickers(), fetchBinanceTickers()]);
+      await Promise.all([fetchExchangeRate(), fetchUpbitTickers(), fetchBithumbTickers(),fetchBybitTickers(), fetchBinanceTickers()]);
     };
   
     fetchAll();
@@ -167,10 +181,11 @@ export default function Home() {
   }, []);
   
 
-  const tickers = baseExchange === 'Upbit' ? upbitTickers : bithumbTickers;
+  const tickers = domesticExchange === 'Upbit' ? upbitTickers : bithumbTickers;
 
   const sortedTickers = tickers.map(ticker => {
-    const bPrice = getBinancePrice(ticker.market);
+    const bPrice = getForeignPrice(ticker.market);
+
     const kimp = bPrice !== null ? calculateKimp(ticker.trade_price, bPrice) : null;
     return {
       ...ticker,
@@ -189,8 +204,9 @@ export default function Home() {
   
 
   const btcTicker = tickers.find(t => t.market === 'KRW-BTC');
-  const btcBinancePrice = getBinancePrice('KRW-BTC');
-  const btcKimp = btcTicker && btcBinancePrice !== null ? calculateKimp(btcTicker.trade_price, btcBinancePrice) : null;
+  const btcForeignPrice = getForeignPrice('KRW-BTC');
+
+  const btcKimp = btcTicker && btcForeignPrice !== null ? calculateKimp(btcTicker.trade_price, btcForeignPrice) : null;
 
   return (
     <>
@@ -262,18 +278,21 @@ export default function Home() {
       </tr>
 
       <tr>
+  <td className="p-2">
+    <a
+      href={foreignExchange === 'Binance'
+        ? 'https://accounts.binance.com/register?ref=NJ3Y7YUZ'
+        : 'https://www.bybit.com/invite?ref=OLVJA'}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-blue-400 hover:underline"
+    >
+      {foreignExchange} BTC
+    </a>
+  </td>
+
         <td className="p-2">
-          <a
-            href="https://accounts.binance.com/register?ref=NJ3Y7YUZ"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-400 hover:underline"
-          >
-            바이낸스 BTC
-          </a>
-        </td>
-        <td className="p-2">
-          {btcBinancePrice !== null ? btcBinancePrice.toLocaleString() + ' USDT' : '로딩 중...'}
+          {btcForeignPrice !== null ? btcForeignPrice.toLocaleString() + ' USDT' : '로딩 중...'}
         </td>
       </tr>
 
@@ -304,17 +323,28 @@ export default function Home() {
         </div>
         
         <h1 className="text-4xl font-bold mb-6 text-center">김프 실시간</h1>
-        <div className="mb-2 text-center">
-        <label className="mr-2 font-semibold">기준 거래소:</label>
-          <select
-            value={baseExchange}
-            onChange={(e) => setBaseExchange(e.target.value as 'Upbit' | 'Bithumb')}
-            className="border rounded p-1 text-black"
-          >
-            <option value="Upbit">업비트</option>
-            <option value="Bithumb">빗썸</option>
-          </select>
-        </div>
+        <div className="mb-2 text-center space-x-4">
+  <label className="font-semibold">국내 거래소:</label>
+  <select
+    value={domesticExchange}
+    onChange={(e) => setDomesticExchange(e.target.value as 'Upbit' | 'Bithumb')}
+    className="border rounded p-1 text-black"
+  >
+    <option value="Upbit">업비트</option>
+    <option value="Bithumb">빗썸</option>
+  </select>
+
+  <label className="font-semibold ml-4">해외 거래소:</label>
+  <select
+    value={foreignExchange}
+    onChange={(e) => setForeignExchange(e.target.value as 'Binance' | 'Bybit')}
+    className="border rounded p-1 text-black"
+  >
+    <option value="Binance">바이낸스</option>
+    <option value="Bybit">바이빗</option>
+  </select>
+</div>
+
 
         <div className="w-full max-w-5xl mx-auto">
          <div className="overflow-x-auto">
@@ -331,8 +361,9 @@ export default function Home() {
       거래량 {renderSortArrow('acc_trade_price_24h')}
     </th>
     <th className="md:p-2 p-1 text-right cursor-pointer" onClick={() => handleSort('trade_price')}>
-      {baseExchange} 가격 {renderSortArrow('trade_price')}
-    </th>
+  {domesticExchange} 가격 {renderSortArrow('trade_price')}
+</th>
+
     <th className="md:p-2 p-1 text-right cursor-pointer" onClick={() => handleSort('binance_price')}>
       Binance 가격 {renderSortArrow('binance_price')}
     </th>
