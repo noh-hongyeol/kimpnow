@@ -206,36 +206,87 @@ export default function Home() {
 
 <div className="flex flex-col md:flex-row w-full justify-center md:space-x-4 space-y-4 md:space-y-0">
 
-          <div>
-          <table className="w-full border border-gray-700 text-xs md:text-sm leading-tight">
-              <thead>
-                <tr className="bg-gray-800">
-                  <th className="p-2">구분</th>
-                  <th className="p-2">현재값</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="p-2">네이버 고시환율</td>
-                  <td className="p-2">{exchangeRate !== null ? exchangeRate.toLocaleString() + ' 원' : '로딩 중...'}</td>
-                </tr>
-                <tr>
-                  <td className="p-2">{baseExchange} BTC</td>
-                  <td className="p-2">{btcTicker ? btcTicker.trade_price.toLocaleString() + ' 원' : '로딩 중...'}</td>
-                </tr>
-                <tr>
-                  <td className="p-2">바이낸스 BTC</td>
-                  <td className="p-2">{btcBinancePrice !== null ? btcBinancePrice.toLocaleString() + ' USDT' : '로딩 중...'}</td>
-                </tr>
-                <tr>
-                  <td className="p-2 font-bold">현재 김프</td>
-                  <td className={`p-2 font-bold ${btcKimp !== null ? (btcKimp >= 0 ? 'text-red-500' : 'text-blue-500') : ''}`}>
-                    {btcKimp !== null ? btcKimp.toFixed(2) + '%' : '계산 중...'}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+<div>
+  <table className="w-full border border-gray-700 text-xs md:text-sm leading-tight">
+    <thead>
+      <tr className="bg-gray-800">
+        <th className="p-2">구분</th>
+        <th className="p-2">현재값</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="p-2">
+          <a
+            href="https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 hover:underline"
+          >
+            네이버 고시환율
+          </a>
+        </td>
+        <td className="p-2">{exchangeRate !== null ? exchangeRate.toLocaleString() + ' 원' : '로딩 중...'}</td>
+      </tr>
+
+      <tr>
+        <td className="p-2">
+          <a
+            href="https://upbit.com/exchange?code=CRIX.UPBIT.KRW-USDT"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 hover:underline"
+          >
+            업비트 USDT
+          </a>
+        </td>
+        <td className="p-2">
+          {upbitTickers.find(t => t.market === 'KRW-USDT')?.trade_price.toLocaleString() ?? '로딩 중...'} 원
+        </td>
+      </tr>
+
+      <tr>
+        <td className="p-2">
+          <a
+            href="https://upbit.com/exchange?code=CRIX.UPBIT.KRW-BTC"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 hover:underline"
+          >
+            업비트 BTC
+          </a>
+        </td>
+        <td className="p-2">
+          {btcTicker ? btcTicker.trade_price.toLocaleString() + ' 원' : '로딩 중...'}
+        </td>
+      </tr>
+
+      <tr>
+        <td className="p-2">
+          <a
+            href="https://accounts.binance.com/register?ref=NJ3Y7YUZ"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 hover:underline"
+          >
+            바이낸스 BTC
+          </a>
+        </td>
+        <td className="p-2">
+          {btcBinancePrice !== null ? btcBinancePrice.toLocaleString() + ' USDT' : '로딩 중...'}
+        </td>
+      </tr>
+
+      <tr>
+        <td className="p-2 font-bold">현재 김프</td>
+        <td className={`p-2 font-bold ${btcKimp !== null ? (btcKimp >= 0 ? 'text-red-500' : 'text-blue-500') : ''}`}>
+          {btcKimp !== null ? btcKimp.toFixed(2) + '%' : '계산 중...'}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
 
           <div className="flex justify-center items-center w-auto flex-shrink-0">
   <a href="https://accounts.binance.com/register?ref=NJ3Y7YUZ" target="_blank" rel="noopener noreferrer">
