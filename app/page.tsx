@@ -203,7 +203,7 @@ const [bybitTickers, setBybitTickers] = useState<BybitTickerData[]>([]);
 
   const tickers = domesticExchange === 'Upbit' ? upbitTickers : bithumbTickers;
 
-  const sortedTickers: (TickerData & {
+const sortedTickers: (TickerData & {
   foreign_price: number | null;
   kimp: number | null;
 })[] = tickers.map(ticker => {
@@ -220,10 +220,13 @@ const [bybitTickers, setBybitTickers] = useState<BybitTickerData[]>([]);
   if (sortKey === 'market') {
     return a.market.localeCompare(b.market) * order;
   }
-  const aValue = a[sortKey] ?? -Infinity;
-  const bValue = b[sortKey] ?? -Infinity;
-  return (aValue - bValue) * order;
+  const aValue = a[sortKey];
+  const bValue = b[sortKey];
+  return (Number(aValue) - Number(bValue)) * order; // ✅ 안전한 형변환
 });
+
+
+
 
   
 
@@ -389,8 +392,9 @@ const [bybitTickers, setBybitTickers] = useState<BybitTickerData[]>([]);
 </th>
 
     <th className="md:p-2 p-1 text-right cursor-pointer" onClick={() => handleSort('foreign_price')}>
-      Binance 가격 {renderSortArrow('foreign_price')}
-    </th>
+  {foreignExchange} 가격 {renderSortArrow('foreign_price')}
+</th>
+
     <th className="md:p-2 p-1 text-right cursor-pointer" onClick={() => handleSort('kimp')}>
       김프(%) {renderSortArrow('kimp')}
     </th>
