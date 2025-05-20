@@ -135,12 +135,17 @@ const [bybitTickers, setBybitTickers] = useState<BybitTickerData[]>([]);
   };
   const fetchBybitTickers = async () => {
   try {
-    const res = await axios.get('/api/bybit');
-    setBybitTickers(prev => triggerFlashOnChange(prev, res.data));
+    const res = await axios.get('https://api.bybit.com/v5/market/tickers?category=spot');
+    const tickers = res.data.result.list.map((item: any) => ({
+      symbol: item.symbol,
+      lastPrice: item.lastPrice,
+    }));
+    setBybitTickers(prev => triggerFlashOnChange(prev, tickers));
   } catch (error) {
-    console.error('❌ Bybit fetch 실패:', error);
+    console.error('❌ Bybit fetch 실패 (클라이언트 직접 호출):', error);
   }
 };
+
 
   const calculateKimp = (krwPrice: number, binancePrice: number | null): number | null => {
     if (binancePrice === null || exchangeRate === null) return null;
