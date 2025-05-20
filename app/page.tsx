@@ -172,7 +172,7 @@ export default function Home() {
 
   useEffect(() => {
     const fetchAll = async () => {
-      await Promise.all([fetchExchangeRate(), fetchUpbitTickers(), fetchBithumbTickers(),fetchBybitTickers(), fetchBinanceTickers()]);
+      await Promise.all([fetchExchangeRate(), fetchUpbitTickers(), fetchBithumbTickers(),fetchBinanceTickers(), fetchBybitTickers(), ]);
     };
   
     fetchAll();
