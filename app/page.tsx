@@ -33,7 +33,7 @@ const [bybitTickers, setBybitTickers] = useState<BybitTickerData[]>([]);
 
   const [domesticExchange, setDomesticExchange] = useState<'Upbit' | 'Bithumb'>('Upbit');
   const [foreignExchange, setForeignExchange] = useState<'Binance' | 'Bybit'>('Binance');
-  const [sortKey, setSortKey] = useState<'market' | 'change_rate' | 'acc_trade_price_24h' | 'trade_price' | 'binance_price' | 'kimp'>('acc_trade_price_24h');
+  const [sortKey, setSortKey] = useState<'market' | 'change_rate' | 'acc_trade_price_24h' | 'trade_price' | 'foreign_price' | 'kimp'>('acc_trade_price_24h');
 
 
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -203,24 +203,28 @@ const [bybitTickers, setBybitTickers] = useState<BybitTickerData[]>([]);
 
   const tickers = domesticExchange === 'Upbit' ? upbitTickers : bithumbTickers;
 
-  const sortedTickers = tickers.map(ticker => {
-    const bPrice = getForeignPrice(ticker.market);
+  const sortedTickers: (TickerData & {
+  foreign_price: number | null;
+  kimp: number | null;
+})[] = tickers.map(ticker => {
+  const bPrice = getForeignPrice(ticker.market);
+  const kimp = bPrice !== null ? calculateKimp(ticker.trade_price, bPrice) : null;
 
-    const kimp = bPrice !== null ? calculateKimp(ticker.trade_price, bPrice) : null;
-    return {
-      ...ticker,
-      binance_price: bPrice,
-      kimp: kimp,
-    };
-  }).sort((a, b) => {
-    const order = sortOrder === 'asc' ? 1 : -1;
-    if (sortKey === 'market') {
-      return a.market.localeCompare(b.market) * order;
-    }
-    const aValue = a[sortKey] ?? -Infinity;
-    const bValue = b[sortKey] ?? -Infinity;
-    return (aValue - bValue) * order;
-  });
+  return {
+    ...ticker,
+    foreign_price: bPrice,
+    kimp,
+  };
+}).sort((a, b) => {
+  const order = sortOrder === 'asc' ? 1 : -1;
+  if (sortKey === 'market') {
+    return a.market.localeCompare(b.market) * order;
+  }
+  const aValue = a[sortKey] ?? -Infinity;
+  const bValue = b[sortKey] ?? -Infinity;
+  return (aValue - bValue) * order;
+});
+
   
 
   const btcTicker = tickers.find(t => t.market === 'KRW-BTC');
@@ -384,8 +388,8 @@ const [bybitTickers, setBybitTickers] = useState<BybitTickerData[]>([]);
   {domesticExchange} 가격 {renderSortArrow('trade_price')}
 </th>
 
-    <th className="md:p-2 p-1 text-right cursor-pointer" onClick={() => handleSort('binance_price')}>
-      Binance 가격 {renderSortArrow('binance_price')}
+    <th className="md:p-2 p-1 text-right cursor-pointer" onClick={() => handleSort('foreign_price')}>
+      Binance 가격 {renderSortArrow('foreign_price')}
     </th>
     <th className="md:p-2 p-1 text-right cursor-pointer" onClick={() => handleSort('kimp')}>
       김프(%) {renderSortArrow('kimp')}
@@ -425,9 +429,10 @@ const [bybitTickers, setBybitTickers] = useState<BybitTickerData[]>([]);
 </td>
 <td className="md:p-2 p-1 text-right">
   <span className={flashClass}>
-    {ticker.binance_price !== null ? ticker.binance_price.toFixed(2) + ' $' : 'N/A'}
+    {ticker.foreign_price !== null ? ticker.foreign_price.toFixed(2) + ' $' : 'N/A'}
   </span>
 </td>
+
 
                     <td className="md:p-2 p-1 text-right">
                       <span className={`${flashClass} ${ticker.kimp !== null ? (ticker.kimp >= 0 ? 'text-red-500' : 'text-blue-500') : ''}`}>
