@@ -1,6 +1,6 @@
 export async function GET() {
   try {
-    const res = await fetch('https://corsproxy.io/?https://api.bybit.com/v5/market/tickers?category=linear', {
+    const res = await fetch('https://api.bybit.com/v5/market/tickers?category=spot', {
       headers: {
         'Accept': 'application/json',
       },
