@@ -1,12 +1,19 @@
-import { NextResponse } from 'next/server';
+// 예시: app/api/bybit/route.ts
 import axios from 'axios';
 
 export async function GET() {
   try {
-    const res = await axios.get('https://api.bybit.com/v5/market/tickers?category=spot');
-    return NextResponse.json(res.data.result.list);
+    const response = await axios.get('https://api.bybit.com/v5/market/tickers', {
+      params: { category: 'linear' }
+    });
+
+    return new Response(JSON.stringify(response.data), {
+      status: 200,
+    });
   } catch (error) {
-    console.error('❌ Bybit API 실패:', error);
-    return NextResponse.json({ error: 'Bybit API 실패' }, { status: 500 });
+    console.error('Bybit API Error:', error);  // 콘솔에 정확한 원인 출력
+    return new Response(JSON.stringify({ error: 'Failed to fetch from Bybit' }), {
+      status: 500,
+    });
   }
 }
