@@ -23,7 +23,7 @@ interface BybitTickerData {
 
 export default function Home() {
   
-  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+  const [exchangeRate, setExchangeRate] = useState<number>(0);
   const [upbitTickers, setUpbitTickers] = useState<TickerData[]>([]);
   const [isFlashingUpdate, setIsFlashingUpdate] = useState(false);
   const [bithumbTickers, setBithumbTickers] = useState<TickerData[]>([]);
@@ -289,8 +289,12 @@ const sortedTickers: (TickerData & {
           </a>
         </td>
         <td className="p-2">
-          {upbitTickers.find(t => t.market === 'KRW-USDT')?.trade_price.toLocaleString() ?? '로딩 중...'} 원
-        </td>
+  {(() => {
+    const usdtTicker = upbitTickers.find(t => t.market === 'KRW-USDT');
+    return usdtTicker ? usdtTicker.trade_price.toLocaleString() + ' 원' : '로딩 중...';
+  })()}
+</td>
+
       </tr>
 
       <tr>
