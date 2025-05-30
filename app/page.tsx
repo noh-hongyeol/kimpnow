@@ -211,7 +211,9 @@ const [bybitTickers, setBybitTickers] = useState<BybitTickerData[]>([]);
 const sortedTickers: (TickerData & {
   foreign_price: number | null;
   kimp: number | null;
-})[] = tickers.map(ticker => {
+})[] = tickers
+.filter(ticker => ticker.trade_price !== null)
+.map(ticker => {
   const bPrice = getForeignPrice(ticker.market);
   const kimp = bPrice !== null ? calculateKimp(ticker.trade_price, bPrice) : null;
 
@@ -437,8 +439,9 @@ const sortedTickers: (TickerData & {
                     
                     <td className="md:p-2 p-1 text-right">
   <span className={flashClass}>
-    {ticker.trade_price.toLocaleString() + ' ₩'}
-  </span>
+  {ticker.trade_price !== null ? ticker.trade_price.toLocaleString() + ' ₩' : 'N/A'}
+</span>
+
 </td>
 <td className="md:p-2 p-1 text-right">
   <span className={flashClass}>
