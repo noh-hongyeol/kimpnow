@@ -257,7 +257,7 @@ const sortedTickers: (TickerData & {
 <div className="flex flex-col md:flex-row w-full justify-center md:space-x-4 space-y-4 md:space-y-0">
 
 <div>
-  <table className="w-full border border-gray-700 text-xs md:text-sm leading-tight">
+  <table className="w-full border border-gray-700 text-xs md:text-sm leading-none">
     <thead>
       <tr className="bg-gray-800">
         <th className="p-2">구분</th>
