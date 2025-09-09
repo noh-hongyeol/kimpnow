@@ -242,6 +242,10 @@ const sortedTickers: (TickerData & {
 
   const btcKimp = btcTicker && btcForeignPrice !== null ? calculateKimp(btcTicker.trade_price, btcForeignPrice) : null;
 
+  const btcDivide = btcTicker && btcForeignPrice
+  ? btcTicker.trade_price / btcForeignPrice
+  : null;
+
   return (
     <>
       <div className="min-h-screen bg-gray-900 text-white p-4 space-y-8">
@@ -265,82 +269,92 @@ const sortedTickers: (TickerData & {
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td className="p-2">
-          <a
-            href="https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-400 hover:underline"
-          >
-            네이버 고시환율
-          </a>
-        </td>
-        <td className="p-2">{exchangeRate !== null ? exchangeRate.toLocaleString() + ' 원' : '로딩 중...'}</td>
-      </tr>
+  <tr>
+    <td className="p-2">
+      <a
+        href="https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-400 hover:underline"
+      >
+        네이버 고시환율
+      </a>
+    </td>
+    <td className="p-2">
+      {exchangeRate !== null ? exchangeRate.toLocaleString() + ' 원' : '로딩 중...'}
+    </td>
+  </tr>
 
-      <tr>
-        <td className="p-2">
-          <a
-            href="https://upbit.com/exchange?code=CRIX.UPBIT.KRW-USDT"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-400 hover:underline"
-          >
-            업비트 USDT
-          </a>
-        </td>
-        <td className="p-2">
-  {(() => {
-    const usdtTicker = upbitTickers.find(t => t.market === 'KRW-USDT');
-    return usdtTicker ? usdtTicker.trade_price.toLocaleString() + ' 원' : '로딩 중...';
-  })()}
-</td>
+  <tr>
+    <td className="p-2">
+      <a
+        href="https://upbit.com/exchange?code=CRIX.UPBIT.KRW-USDT"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-400 hover:underline"
+      >
+        업비트 USDT
+      </a>
+    </td>
+    <td className="p-2">
+      {(() => {
+        const usdtTicker = upbitTickers.find(t => t.market === 'KRW-USDT');
+        return usdtTicker ? usdtTicker.trade_price.toLocaleString() + ' 원' : '로딩 중...';
+      })()}
+    </td>
+  </tr>
 
-      </tr>
+  {/* ▼ 새로 추가되는 행: 업비트 BTC ÷ 해외거래소 BTC */}
+  <tr>
+    <td className="p-2 font-bold">원달러환산</td>
+    <td className="p-2">
+      {btcDivide !== null ? btcDivide.toFixed(1) + ' 원' : '계산 중...'}
 
-      <tr>
-        <td className="p-2">
-          <a
-            href="https://upbit.com/exchange?code=CRIX.UPBIT.KRW-BTC"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-400 hover:underline"
-          >
-            업비트 BTC
-          </a>
-        </td>
-        <td className="p-2">
-          {btcTicker ? btcTicker.trade_price.toLocaleString() + ' 원' : '로딩 중...'}
-        </td>
-      </tr>
+    </td>
+  </tr>
 
-      <tr>
-  <td className="p-2">
-    <a
-      href={foreignExchange === 'Binance'
-        ? 'https://accounts.binance.com/register?ref=NJ3Y7YUZ'
-        : 'https://www.bybit.com/invite?ref=OLVJA'}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-blue-400 hover:underline"
-    >
-      {foreignExchange} BTC
-    </a>
-  </td>
+  <tr>
+    <td className="p-2">
+      <a
+        href="https://upbit.com/exchange?code=CRIX.UPBIT.KRW-BTC"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-400 hover:underline"
+      >
+        업비트 BTC
+      </a>
+    </td>
+    <td className="p-2">
+      {btcTicker ? btcTicker.trade_price.toLocaleString() + ' 원' : '로딩 중...'}
+    </td>
+  </tr>
 
-        <td className="p-2">
-          {btcForeignPrice !== null ? btcForeignPrice.toLocaleString() + ' USDT' : '로딩 중...'}
-        </td>
-      </tr>
+  <tr>
+    <td className="p-2">
+      <a
+        href={foreignExchange === 'Binance'
+          ? 'https://accounts.binance.com/register?ref=NJ3Y7YUZ'
+          : 'https://www.bybit.com/invite?ref=OLVJA'}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-400 hover:underline"
+      >
+        {foreignExchange} BTC
+      </a>
+    </td>
+    <td className="p-2">
+      {btcForeignPrice !== null ? btcForeignPrice.toLocaleString() + ' USDT' : '로딩 중...'}
+    </td>
+  </tr>
 
-      <tr>
-        <td className="p-2 font-bold">현재 김프</td>
-        <td className={`p-2 font-bold ${btcKimp !== null ? (btcKimp >= 0 ? 'text-red-500' : 'text-blue-500') : ''}`}>
-          {btcKimp !== null ? btcKimp.toFixed(2) + '%' : '계산 중...'}
-        </td>
-      </tr>
-    </tbody>
+  <tr>
+    <td className="p-2 font-bold">현재 김프</td>
+    <td className={`p-2 font-bold ${btcKimp !== null ? (btcKimp >= 0 ? 'text-red-500' : 'text-blue-500') : ''}`}>
+      {btcKimp !== null ? btcKimp.toFixed(2) + '%' : '계산 중...'}
+    </td>
+  </tr>
+</tbody>
+
   </table>
 </div>
 
