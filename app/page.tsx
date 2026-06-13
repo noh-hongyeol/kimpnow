@@ -609,7 +609,7 @@ export default function Home() {
             <div>
               <h2 className="text-2xl font-bold">USDT 김프 차트</h2>
               <p className="text-sm text-gray-400 mt-1">
-                X축 시간 / Y축 김프 퍼센트, DB 히스토리 기반
+                계산식: (업비트 USDT ÷ 네이버 고시환율 - 1) × 100 DB 히스토리 기반
               </p>
               <p className="text-xs text-gray-500 mt-1">
                 상태: {chartStatus} / 저장: {lastSavedAt}
