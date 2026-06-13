@@ -1,13 +1,19 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { getSupabase } from '@/lib/supabase'
+
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://localhost:3001'
+
     const [upbitRes, exchangeRes] = await Promise.all([
       fetch('https://api.upbit.com/v1/ticker?markets=KRW-USDT', {
         cache: 'no-store',
       }),
-      fetch('http://localhost:3001/api/exchange', {
+      fetch(`${baseUrl}/api/exchange`, {
         cache: 'no-store',
       }),
     ])
@@ -31,6 +37,7 @@ export async function GET() {
     }
 
     const kimp = ((upbitUsdtPrice / exchangeRate) - 1) * 100
+    const supabase = getSupabase()
 
     const { data, error } = await supabase
       .from('kimp_prices')
