@@ -1,6 +1,8 @@
-import { supabase } from './supabase'
+import { getSupabase } from './supabase'
 
 export async function getLatestKimpData() {
+  const supabase = getSupabase()
+
   const { data, error } = await supabase
     .from('kimp_prices')
     .select('*')
