@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
+import { createChart, LineSeries } from 'lightweight-charts';
 
 interface TickerData {
   market: string;
@@ -20,27 +21,27 @@ interface BybitTickerData {
   lastPrice: string;
 }
 
-interface UsdtKimpHistoryData {
-  time: string;
-  kimp: number;
-}
-
 export default function Home() {
+  const chartContainerRef = useRef<HTMLDivElement | null>(null);
+  const chartRef = useRef<any>(null);
+  const lineSeriesRef = useRef<any>(null);
+
   const [exchangeRate, setExchangeRate] = useState<number>(0);
   const [upbitTickers, setUpbitTickers] = useState<TickerData[]>([]);
   const [bithumbTickers, setBithumbTickers] = useState<TickerData[]>([]);
   const [binanceTickers, setBinanceTickers] = useState<BinanceTickerData[]>([]);
   const [bybitTickers, setBybitTickers] = useState<BybitTickerData[]>([]);
-  const [usdtKimpHistory, setUsdtKimpHistory] = useState<UsdtKimpHistoryData[]>([]);
 
   const [domesticExchange, setDomesticExchange] = useState<'Upbit' | 'Bithumb'>('Upbit');
   const [foreignExchange, setForeignExchange] = useState<'Binance' | 'Bybit'>('Binance');
+
   const [sortKey, setSortKey] = useState<'market' | 'change_rate' | 'acc_trade_price_24h' | 'trade_price' | 'foreign_price' | 'kimp'>('acc_trade_price_24h');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [isFlashingUpdate, setIsFlashingUpdate] = useState(false);
   const [flashStates, setFlashStates] = useState<Record<string, boolean>>({});
+  const [usdtKimpPointCount, setUsdtKimpPointCount] = useState<number>(0);
 
   useEffect(() => {
     if (lastUpdated) {
@@ -68,21 +69,20 @@ export default function Home() {
 
     updateTimestamp();
     const interval = setInterval(updateTimestamp, 5000);
-
     return () => clearInterval(interval);
   }, []);
 
   const triggerFlashOnChange = (prev: any[], next: any[]) => {
     const newFlashStates = { ...flashStates };
 
-    next.forEach(item => {
+    next.forEach((item) => {
       const key = item.market || item.symbol;
-      const prevItem = prev.find(p => (p.market || p.symbol) === key);
+      const prevItem = prev.find((p) => (p.market || p.symbol) === key);
 
       if (prevItem && JSON.stringify(prevItem) !== JSON.stringify(item)) {
         newFlashStates[key] = true;
         setTimeout(() => {
-          setFlashStates(s => ({ ...s, [key]: false }));
+          setFlashStates((s) => ({ ...s, [key]: false }));
         }, 300);
       }
     });
@@ -98,7 +98,6 @@ export default function Home() {
 
   const fetchUpbitTickers = async () => {
     const marketsRes = await axios.get('/api/upbit/market-all');
-
     const krwMarkets = marketsRes.data
       .filter((m: any) => m.market.startsWith('KRW-'))
       .map((m: any) => m.market);
@@ -114,7 +113,7 @@ export default function Home() {
       change_rate: item.signed_change_rate * 100,
     }));
 
-    setUpbitTickers(prev => triggerFlashOnChange(prev, tickers));
+    setUpbitTickers((prev) => triggerFlashOnChange(prev, tickers));
   };
 
   const fetchBithumbTickers = async () => {
@@ -130,33 +129,25 @@ export default function Home() {
         change_rate: parseFloat(data[key].fluctate_rate_24H) || 0,
       }));
 
-    setBithumbTickers(prev => triggerFlashOnChange(prev, tickers));
+    setBithumbTickers((prev) => triggerFlashOnChange(prev, tickers));
   };
 
   const fetchBinanceTickers = async () => {
-    try {
-      const res = await axios.get('https://api.binance.com/api/v3/ticker/price');
-      setBinanceTickers(prev => triggerFlashOnChange(prev, res.data));
-    } catch (error) {
-      console.error('❌ Binance fetch 실패:', error);
-    }
+    const res = await axios.get('https://api.binance.com/api/v3/ticker/price');
+    setBinanceTickers((prev) => triggerFlashOnChange(prev, res.data));
   };
 
   const fetchBybitTickers = async () => {
-    try {
-      const res = await axios.get('https://api.bybit.com/v5/market/tickers?category=spot');
-      const tickers = res.data.result.list.map((item: any) => ({
-        symbol: item.symbol,
-        lastPrice: item.lastPrice,
-      }));
-      setBybitTickers(prev => triggerFlashOnChange(prev, tickers));
-    } catch (error) {
-      console.error('❌ Bybit fetch 실패:', error);
-    }
+    const res = await axios.get('https://api.bybit.com/v5/market/tickers?category=spot');
+    const tickers = res.data.result.list.map((item: any) => ({
+      symbol: item.symbol,
+      lastPrice: item.lastPrice,
+    }));
+    setBybitTickers((prev) => triggerFlashOnChange(prev, tickers));
   };
 
   const calculateKimp = (krwPrice: number, foreignPrice: number | null): number | null => {
-    if (foreignPrice === null || exchangeRate === null || exchangeRate === 0) return null;
+    if (foreignPrice === null || !exchangeRate) return null;
     const usdToKrwPrice = foreignPrice * exchangeRate;
     return ((krwPrice - usdToKrwPrice) / usdToKrwPrice) * 100;
   };
@@ -165,12 +156,12 @@ export default function Home() {
     const symbolName = symbol.replace('KRW-', '').toUpperCase() + 'USDT';
 
     if (foreignExchange === 'Binance') {
-      const ticker = binanceTickers.find(t => t.symbol === symbolName);
+      const ticker = binanceTickers.find((t) => t.symbol === symbolName);
       return ticker ? parseFloat(ticker.price) : null;
-    } else {
-      const ticker = bybitTickers.find(t => t.symbol === symbolName);
-      return ticker ? parseFloat(ticker.lastPrice) : null;
     }
+
+    const ticker = bybitTickers.find((t) => t.symbol === symbolName);
+    return ticker ? parseFloat(ticker.lastPrice) : null;
   };
 
   const handleSort = (key: typeof sortKey) => {
@@ -191,74 +182,79 @@ export default function Home() {
     return `${Math.floor(value / 100000000)}억`;
   };
 
-  const renderUsdtKimpChart = () => {
-    if (usdtKimpHistory.length < 2) {
-      return (
-        <div className="h-72 flex items-center justify-center text-gray-400">
-          USDT 김프 데이터 수집 중...
-        </div>
-      );
-    }
+  useEffect(() => {
+    if (!chartContainerRef.current) return;
 
-    const width = 1000;
-    const height = 300;
-    const padding = 36;
+    const chart = createChart(chartContainerRef.current, {
+      height: 420,
+      autoSize: true,
+      layout: {
+        background: { color: '#111827' },
+        textColor: '#d1d5db',
+      },
+      grid: {
+        vertLines: { color: '#1f2937' },
+        horzLines: { color: '#1f2937' },
+      },
+      rightPriceScale: {
+        borderColor: '#374151',
+      },
+      timeScale: {
+        borderColor: '#374151',
+        timeVisible: true,
+        secondsVisible: false,
+      },
+      crosshair: {
+        mode: 1,
+      },
+    });
 
-    const values = usdtKimpHistory.map(d => d.kimp);
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const range = max - min || 1;
+    const lineSeries = chart.addSeries(LineSeries, {
+      color: '#facc15',
+      lineWidth: 2,
+      priceFormat: {
+        type: 'custom',
+        formatter: (price: number) => `${price.toFixed(3)}%`,
+      },
+    });
 
-    const points = usdtKimpHistory
-      .map((d, i) => {
-        const x = padding + (i / (usdtKimpHistory.length - 1)) * (width - padding * 2);
-        const y = padding + ((max - d.kimp) / range) * (height - padding * 2);
-        return `${x},${y}`;
-      })
-      .join(' ');
+    chartRef.current = chart;
+    lineSeriesRef.current = lineSeries;
 
-    const zeroY =
-      min <= 0 && max >= 0
-        ? padding + ((max - 0) / range) * (height - padding * 2)
-        : null;
+    const loadHistory = async () => {
+      const res = await fetch('/api/kimp-history');
+      const json = await res.json();
 
-    return (
-      <div className="w-full overflow-x-auto">
-        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-72">
-          <line x1={padding} y1={padding} x2={padding} y2={height - padding} stroke="#374151" />
-          <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="#374151" />
+      if (!json.success || !lineSeriesRef.current) return;
 
-          {zeroY !== null && (
-            <line
-              x1={padding}
-              y1={zeroY}
-              x2={width - padding}
-              y2={zeroY}
-              stroke="#6b7280"
-              strokeDasharray="5 5"
-            />
-          )}
+      const historyData = json.data
+        .filter((row: any) => row.kimp !== null)
+        .map((row: any) => ({
+          time: Math.floor(new Date(row.created_at).getTime() / 1000),
+          value: Number(Number(row.kimp).toFixed(4)),
+        }));
 
-          <polyline
-            fill="none"
-            stroke="#facc15"
-            strokeWidth="3"
-            points={points}
-          />
+      lineSeriesRef.current.setData(historyData);
+      setUsdtKimpPointCount(historyData.length);
+    };
 
-          <text x={padding} y="20" fill="#9ca3af" fontSize="12">
-            최고 {max.toFixed(3)}%
-          </text>
-          <text x={padding} y={height - 8} fill="#9ca3af" fontSize="12">
-            최저 {min.toFixed(3)}%
-          </text>
-          <text x={width - 180} y={height - 8} fill="#9ca3af" fontSize="12">
-            최근 {usdtKimpHistory.length}개
-          </text>
-        </svg>
-      </div>
-    );
-  };
+    loadHistory();
+
+    const handleResize = () => {
+      if (!chartContainerRef.current) return;
+      chart.applyOptions({ width: chartContainerRef.current.clientWidth });
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      chart.remove();
+      chartRef.current = null;
+      lineSeriesRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -273,7 +269,6 @@ export default function Home() {
 
     fetchAll();
     const interval = setInterval(fetchAll, 5000);
-
     return () => clearInterval(interval);
   }, []);
 
@@ -283,14 +278,14 @@ export default function Home() {
     foreign_price: number | null;
     kimp: number | null;
   })[] = tickers
-    .filter(ticker => ticker.trade_price !== null)
-    .map(ticker => {
-      const bPrice = getForeignPrice(ticker.market);
-      const kimp = bPrice !== null ? calculateKimp(ticker.trade_price, bPrice) : null;
+    .filter((ticker) => ticker.trade_price !== null)
+    .map((ticker) => {
+      const foreignPrice = getForeignPrice(ticker.market);
+      const kimp = foreignPrice !== null ? calculateKimp(ticker.trade_price, foreignPrice) : null;
 
       return {
         ...ticker,
-        foreign_price: bPrice,
+        foreign_price: foreignPrice,
         kimp,
       };
     })
@@ -307,53 +302,41 @@ export default function Home() {
       return (Number(aValue) - Number(bValue)) * order;
     });
 
-  const btcTicker = tickers.find(t => t.market === 'KRW-BTC');
+  const btcTicker = tickers.find((t) => t.market === 'KRW-BTC');
   const btcForeignPrice = getForeignPrice('KRW-BTC');
 
-  const btcKimp = btcTicker && btcForeignPrice !== null
-    ? calculateKimp(btcTicker.trade_price, btcForeignPrice)
-    : null;
+  const btcKimp =
+    btcTicker && btcForeignPrice !== null
+      ? calculateKimp(btcTicker.trade_price, btcForeignPrice)
+      : null;
 
-  const btcDivide = btcTicker && btcForeignPrice
-    ? btcTicker.trade_price / btcForeignPrice
-    : null;
+  const btcDivide =
+    btcTicker && btcForeignPrice
+      ? btcTicker.trade_price / btcForeignPrice
+      : null;
 
-  const bithumbUsdtTicker = bithumbTickers.find(t => t.market === 'KRW-USDT');
-  const upbitUsdtTicker = upbitTickers.find(t => t.market === 'KRW-USDT');
-
-  const usdtTickerForChart = bithumbUsdtTicker || upbitUsdtTicker;
+  const upbitUsdtTicker = upbitTickers.find((t) => t.market === 'KRW-USDT');
 
   const usdtKimp =
-    usdtTickerForChart && exchangeRate
-      ? ((usdtTickerForChart.trade_price / exchangeRate) - 1) * 100
+    upbitUsdtTicker && exchangeRate
+      ? ((upbitUsdtTicker.trade_price / exchangeRate) - 1) * 100
       : null;
 
   useEffect(() => {
-    if (usdtKimp === null) return;
+    if (usdtKimp === null || !lineSeriesRef.current || !chartRef.current) return;
 
-    const now = new Date();
-    const time = now.toLocaleTimeString('ko-KR', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
+    const point = {
+      time: Math.floor(Date.now() / 1000),
+      value: Number(usdtKimp.toFixed(4)),
+    };
 
-    setUsdtKimpHistory(prev => {
-      const last = prev[prev.length - 1];
-
-      if (last && last.kimp === usdtKimp) {
-        return prev;
-      }
-
-      const next = [...prev, { time, kimp: usdtKimp }];
-      return next.slice(-120);
-    });
+    lineSeriesRef.current.update(point);
   }, [usdtKimp]);
 
   return (
     <>
       <div className="min-h-screen bg-gray-900 text-white p-4 space-y-8">
-        <div className={`text-lg font-bold mb-4 text-center transition duration-00 ${isFlashingUpdate ? 'text-yellow-400' : 'text-gray-300'}`}>
+        <div className={`text-lg font-bold mb-4 text-center transition duration-300 ${isFlashingUpdate ? 'text-yellow-400' : 'text-gray-300'}`}>
           실시간 업데이트: {lastUpdated || '로딩 중...'}
         </div>
 
@@ -366,6 +349,7 @@ export default function Home() {
                   <th className="p-2">현재값</th>
                 </tr>
               </thead>
+
               <tbody>
                 <tr>
                   <td className="p-2">
@@ -375,7 +359,7 @@ export default function Home() {
                       rel="noopener noreferrer"
                       className="text-blue-400 hover:underline"
                     >
-                      네이버 고시환율
+                      원달러 환율
                     </a>
                   </td>
                   <td className="p-2">
@@ -386,28 +370,21 @@ export default function Home() {
                 <tr>
                   <td className="p-2">
                     <a
-                      href="https://www.bithumb.com/react/trade/order/USDT-KRW"
+                      href="https://upbit.com/exchange?code=CRIX.UPBIT.KRW-USDT"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-400 hover:underline"
                     >
-                      빗썸 USDT
+                      업비트 USDT
                     </a>
                   </td>
                   <td className="p-2">
-                    {bithumbUsdtTicker ? bithumbUsdtTicker.trade_price.toLocaleString() + ' 원' : '로딩 중...'}
+                    {upbitUsdtTicker ? upbitUsdtTicker.trade_price.toLocaleString() + ' 원' : '로딩 중...'}
                   </td>
                 </tr>
 
                 <tr>
-                  <td className="p-2 font-bold">USDT 김프</td>
-                  <td className={`p-2 font-bold ${usdtKimp !== null ? (usdtKimp >= 0 ? 'text-red-500' : 'text-blue-500') : ''}`}>
-                    {usdtKimp !== null ? usdtKimp.toFixed(3) + '%' : '계산 중...'}
-                  </td>
-                </tr>
-
-                <tr>
-                  <td className="p-2 font-bold">원달러환산</td>
+                  <td className="p-2 font-bold">업비트 BTC ÷ 해외 BTC</td>
                   <td className="p-2">
                     {btcDivide !== null ? btcDivide.toFixed(1) + ' 원' : '계산 중...'}
                   </td>
@@ -448,7 +425,7 @@ export default function Home() {
                 </tr>
 
                 <tr>
-                  <td className="p-2 font-bold">현재 김프</td>
+                  <td className="p-2 font-bold">현재 BTC 김프</td>
                   <td className={`p-2 font-bold ${btcKimp !== null ? (btcKimp >= 0 ? 'text-red-500' : 'text-blue-500') : ''}`}>
                     {btcKimp !== null ? btcKimp.toFixed(2) + '%' : '계산 중...'}
                   </td>
@@ -470,21 +447,27 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="w-full max-w-5xl mx-auto bg-gray-800 border border-gray-700 rounded-xl p-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3">
+        <div className="w-full max-w-6xl mx-auto bg-gray-800 border border-gray-700 rounded-xl p-4">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-2 mb-4">
             <div>
               <h2 className="text-2xl font-bold">USDT 김프 차트</h2>
               <p className="text-sm text-gray-400 mt-1">
-                빗썸 USDT ÷ 네이버 고시환율 기준
+                업비트 USDT ÷ 원달러 환율 기준, DB 저장 데이터 기반
               </p>
             </div>
 
-            <div className={`text-3xl font-bold ${usdtKimp !== null ? (usdtKimp >= 0 ? 'text-red-500' : 'text-blue-500') : 'text-gray-400'}`}>
-              {usdtKimp !== null ? usdtKimp.toFixed(3) + '%' : '계산 중...'}
+            <div className="text-right">
+              <div className="text-sm text-gray-400">현재 USDT 김프</div>
+              <div className={`text-3xl font-bold ${usdtKimp !== null ? (usdtKimp >= 0 ? 'text-red-500' : 'text-blue-500') : 'text-gray-400'}`}>
+                {usdtKimp !== null ? usdtKimp.toFixed(3) + '%' : '계산 중...'}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                저장 데이터 {usdtKimpPointCount}개
+              </div>
             </div>
           </div>
 
-          {renderUsdtKimpChart()}
+          <div ref={chartContainerRef} className="w-full h-[420px]" />
         </div>
 
         <h1 className="text-4xl font-bold mb-6 text-center">김프 실시간</h1>
@@ -538,7 +521,7 @@ export default function Home() {
               </thead>
 
               <tbody>
-                {sortedTickers.map(ticker => {
+                {sortedTickers.map((ticker) => {
                   const isFlashing = flashStates[ticker.market];
                   const flashClass = isFlashing ? 'text-yellow-400' : '';
 
@@ -614,7 +597,7 @@ export default function Home() {
         <p>※ 본 사이트는 투자 권유 또는 자문을 제공하지 않으며, 투자 판단 및 결과는 이용자 본인의 책임입니다.</p>
         <p>※ 표기되는 김프 및 시세 정보는 참고용으로 지연 또는 오차가 발생할 수 있습니다.</p>
         <p>※ 일부 링크는 제휴(레퍼럴) 링크로 수익이 발생할 수 있으며, 본 사이트는 금융기관과 무관한 개인 개발 서비스입니다.</p>
-        <p>※ 문의 e18901@gmail.com </p>
+        <p>※ 문의 e18901@gmail.com</p>
       </footer>
     </>
   );

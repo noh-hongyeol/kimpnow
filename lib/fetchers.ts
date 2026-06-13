@@ -1,16 +1,16 @@
-import axios from 'axios';
+import { supabase } from './supabase'
 
-export const fetchBithumb = async () => {
-  const res = await axios.get('/api/bithumb');
-  return res.data;
-};
+export async function getLatestKimpData() {
+  const { data, error } = await supabase
+    .from('kimp_prices')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(1)
 
-export const fetchBinance = async () => {
-  const res = await axios.get('/api/binance');
-  return res.data;
-};
+  if (error) {
+    console.error('Supabase error:', error)
+    return null
+  }
 
-export const fetchUpbit = async (markets: string) => {
-  const res = await axios.get('/api/upbit', { params: { markets } });
-  return res.data;
-};
+  return data?.[0] ?? null
+}
