@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
-import { createChart, LineSeries } from 'lightweight-charts';
+import { createChart, LineSeries, type IChartApi, type ISeriesApi, type LineData, type UTCTimestamp } from 'lightweight-charts';
 
 interface TickerData {
   market: string;
@@ -21,10 +21,87 @@ interface BybitTickerData {
   lastPrice: string;
 }
 
+interface KimpHistoryRow {
+  id?: number;
+  created_at: string;
+  kimp: number | string | null;
+  upbit_price?: number | null;
+  binance_price?: number | null;
+  exchange_rate?: number | null;
+}
+
+type IntervalKey = '1m' | '5m' | '15m' | '1h' | '4h';
+
+const intervalMinutes: Record<IntervalKey, number> = {
+  '1m': 1,
+  '5m': 5,
+  '15m': 15,
+  '1h': 60,
+  '4h': 240,
+};
+
+const intervalLabels: Record<IntervalKey, string> = {
+  '1m': '1분',
+  '5m': '5분',
+  '15m': '15분',
+  '1h': '1시간',
+  '4h': '4시간',
+};
+
+const toUnixTime = (createdAt: string): UTCTimestamp => {
+  return (
+    Math.floor(new Date(createdAt).getTime() / 1000) +
+    9 * 60 * 60
+  ) as UTCTimestamp;
+};
+
+const normalizeHistory = (rows: KimpHistoryRow[]): LineData[] => {
+  const map = new Map<number, LineData>();
+
+  rows.forEach((row) => {
+    if (!row.created_at || row.kimp === null || row.kimp === undefined) return;
+
+    const time =
+  Math.floor(new Date(row.created_at).getTime() / 1000) +
+  9 * 60 * 60;
+    const value = Number(row.kimp);
+
+    if (!Number.isFinite(time) || !Number.isFinite(value)) return;
+
+    map.set(time, {
+      time: time as UTCTimestamp,
+      value: Number(value.toFixed(4)),
+    });
+  });
+
+  return Array.from(map.values()).sort((a, b) => Number(a.time) - Number(b.time));
+};
+
+const aggregateHistory = (data: LineData[], interval: IntervalKey): LineData[] => {
+  const minutes = intervalMinutes[interval];
+  if (minutes === 1) return data;
+
+  const bucketSeconds = minutes * 60;
+  const buckets = new Map<number, LineData>();
+
+  data.forEach((point) => {
+    const time = Number(point.time);
+    const bucketTime = Math.floor(time / bucketSeconds) * bucketSeconds;
+
+    buckets.set(bucketTime, {
+      time: bucketTime as UTCTimestamp,
+      value: point.value,
+    });
+  });
+
+  return Array.from(buckets.values()).sort((a, b) => Number(a.time) - Number(b.time));
+};
+
 export default function Home() {
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
-  const chartRef = useRef<any>(null);
-  const lineSeriesRef = useRef<any>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+  const lineSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+  const lastSavedMinuteRef = useRef<string | null>(null);
 
   const [exchangeRate, setExchangeRate] = useState<number>(0);
   const [upbitTickers, setUpbitTickers] = useState<TickerData[]>([]);
@@ -41,14 +118,22 @@ export default function Home() {
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [isFlashingUpdate, setIsFlashingUpdate] = useState(false);
   const [flashStates, setFlashStates] = useState<Record<string, boolean>>({});
-  const [usdtKimpPointCount, setUsdtKimpPointCount] = useState<number>(0);
+
+  const [rawHistoryData, setRawHistoryData] = useState<LineData[]>([]);
+  const [selectedInterval, setSelectedInterval] = useState<IntervalKey>('1m');
+  const [chartStatus, setChartStatus] = useState<string>('히스토리 로딩 중');
+  const [lastSavedAt, setLastSavedAt] = useState<string>('대기 중');
+
+  const displayedHistoryData = useMemo(() => {
+    return aggregateHistory(rawHistoryData, selectedInterval);
+  }, [rawHistoryData, selectedInterval]);
 
   useEffect(() => {
-    if (lastUpdated) {
-      setIsFlashingUpdate(true);
-      const timer = setTimeout(() => setIsFlashingUpdate(false), 300);
-      return () => clearTimeout(timer);
-    }
+    if (!lastUpdated) return;
+
+    setIsFlashingUpdate(true);
+    const timer = setTimeout(() => setIsFlashingUpdate(false), 300);
+    return () => clearTimeout(timer);
   }, [lastUpdated]);
 
   useEffect(() => {
@@ -93,7 +178,7 @@ export default function Home() {
 
   const fetchExchangeRate = async () => {
     const res = await axios.get('/api/exchange');
-    setExchangeRate(res.data.rate);
+    setExchangeRate(Number(res.data.rate));
   };
 
   const fetchUpbitTickers = async () => {
@@ -182,12 +267,46 @@ export default function Home() {
     return `${Math.floor(value / 100000000)}억`;
   };
 
+  const loadHistory = async () => {
+    try {
+      setChartStatus('히스토리 로딩 중');
+
+      const res = await fetch('/api/kimp-history', {
+        cache: 'no-store',
+      });
+
+      const json = await res.json();
+
+      if (!res.ok || !json.success) {
+        setChartStatus(`히스토리 실패: ${json.error || json.message || 'API 실패'}`);
+        return;
+      }
+
+      const normalized = normalizeHistory(json.data || []);
+      setRawHistoryData(normalized);
+      setChartStatus(`히스토리 로드 완료: 원본 ${normalized.length}개`);
+    } catch (error: any) {
+      setChartStatus(`히스토리 에러: ${error?.message ?? String(error)}`);
+    }
+  };
+
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
     const chart = createChart(chartContainerRef.current, {
       height: 420,
       autoSize: true,
+      localization: {
+        locale: 'ko-KR',
+        timeFormatter: (time: number) => {
+          return new Date(time * 1000).toLocaleString('ko-KR', {
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+          });
+        },
+      },
       layout: {
         background: { color: '#111827' },
         textColor: '#d1d5db',
@@ -221,28 +340,12 @@ export default function Home() {
     chartRef.current = chart;
     lineSeriesRef.current = lineSeries;
 
-    const loadHistory = async () => {
-      const res = await fetch('/api/kimp-history');
-      const json = await res.json();
-
-      if (!json.success || !lineSeriesRef.current) return;
-
-      const historyData = json.data
-        .filter((row: any) => row.kimp !== null)
-        .map((row: any) => ({
-          time: Math.floor(new Date(row.created_at).getTime() / 1000),
-          value: Number(Number(row.kimp).toFixed(4)),
-        }));
-
-      lineSeriesRef.current.setData(historyData);
-      setUsdtKimpPointCount(historyData.length);
-    };
-
     loadHistory();
 
     const handleResize = () => {
       if (!chartContainerRef.current) return;
       chart.applyOptions({ width: chartContainerRef.current.clientWidth });
+      chart.timeScale().fitContent();
     };
 
     window.addEventListener('resize', handleResize);
@@ -255,6 +358,16 @@ export default function Home() {
       lineSeriesRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (!lineSeriesRef.current || !chartRef.current) return;
+
+    lineSeriesRef.current.setData(displayedHistoryData);
+
+    if (displayedHistoryData.length > 0) {
+      chartRef.current.timeScale().fitContent();
+    }
+  }, [displayedHistoryData]);
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -323,14 +436,58 @@ export default function Home() {
       : null;
 
   useEffect(() => {
-    if (usdtKimp === null || !lineSeriesRef.current || !chartRef.current) return;
+    if (usdtKimp === null) return;
 
-    const point = {
-      time: Math.floor(Date.now() / 1000),
-      value: Number(usdtKimp.toFixed(4)),
+    const now = new Date();
+    const minuteKey = now.toISOString().slice(0, 16);
+
+    if (lastSavedMinuteRef.current === minuteKey) return;
+    lastSavedMinuteRef.current = minuteKey;
+
+    const saveKimp = async () => {
+      try {
+        setLastSavedAt('저장 중');
+
+        const res = await fetch('/api/save-kimp', {
+          method: 'GET',
+          cache: 'no-store',
+        });
+
+        const json = await res.json();
+
+        if (!res.ok || !json.success) {
+          setLastSavedAt(`저장 실패: ${json.error || json.message || 'API 실패'}`);
+          return;
+        }
+
+        const savedRow = Array.isArray(json.data) ? json.data[0] : json.data;
+
+        if (savedRow?.created_at && savedRow?.kimp !== null && savedRow?.kimp !== undefined) {
+          const newPoint: LineData = {
+            time: toUnixTime(savedRow.created_at),
+            value: Number(Number(savedRow.kimp).toFixed(4)),
+          };
+
+          setRawHistoryData((prev) => {
+            const map = new Map<number, LineData>();
+            [...prev, newPoint].forEach((point) => {
+              map.set(Number(point.time), point);
+            });
+            return Array.from(map.values()).sort((a, b) => Number(a.time) - Number(b.time));
+          });
+
+          setLastSavedAt(new Date(savedRow.created_at).toLocaleString('ko-KR'));
+          return;
+        }
+
+        await loadHistory();
+        setLastSavedAt(new Date().toLocaleString('ko-KR'));
+      } catch (error: any) {
+        setLastSavedAt(`저장 에러: ${error?.message ?? String(error)}`);
+      }
     };
 
-    lineSeriesRef.current.update(point);
+    saveKimp();
   }, [usdtKimp]);
 
   return (
@@ -452,8 +609,36 @@ export default function Home() {
             <div>
               <h2 className="text-2xl font-bold">USDT 김프 차트</h2>
               <p className="text-sm text-gray-400 mt-1">
-                업비트 USDT ÷ 원달러 환율 기준, DB 저장 데이터 기반
+                X축 시간 / Y축 김프 퍼센트, DB 히스토리 기반
               </p>
+              <p className="text-xs text-gray-500 mt-1">
+                상태: {chartStatus} / 저장: {lastSavedAt}
+              </p>
+
+              <div className="flex flex-wrap gap-2 mt-4">
+                {(['1m', '5m', '15m', '1h', '4h'] as IntervalKey[]).map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setSelectedInterval(key)}
+                    className={`px-3 py-1 rounded border text-sm ${
+                      selectedInterval === key
+                        ? 'bg-yellow-400 text-black border-yellow-400'
+                        : 'bg-gray-900 text-white border-gray-600'
+                    }`}
+                  >
+                    {intervalLabels[key]}
+                  </button>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={loadHistory}
+                  className="px-3 py-1 rounded border border-gray-600 bg-gray-900 text-white text-sm"
+                >
+                  히스토리 새로고침
+                </button>
+              </div>
             </div>
 
             <div className="text-right">
@@ -462,7 +647,10 @@ export default function Home() {
                 {usdtKimp !== null ? usdtKimp.toFixed(3) + '%' : '계산 중...'}
               </div>
               <div className="text-xs text-gray-500 mt-1">
-                저장 데이터 {usdtKimpPointCount}개
+                원본 {rawHistoryData.length}개 / {intervalLabels[selectedInterval]}봉 {displayedHistoryData.length}개
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                마지막 저장: {lastSavedAt}
               </div>
             </div>
           </div>

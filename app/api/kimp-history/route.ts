@@ -1,23 +1,52 @@
-import { NextResponse } from 'next/server'
-import { getSupabase } from '@/lib/supabase'
+import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables');
+}
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export async function GET() {
-  const supabase = getSupabase()
+  try {
+    const { data, error } = await supabase
+      .from('kimp_history')
+      .select('id, created_at, kimp, upbit_price, binance_price, exchange_rate')
+      .order('created_at', { ascending: true });
 
-  const { data, error } = await supabase
-    .from('kimp_prices')
-    .select('*')
-    .order('created_at', { ascending: true })
-    .limit(200)
+    if (error) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: error.message,
+        },
+        { status: 500 }
+      );
+    }
 
-  if (error) {
-    return NextResponse.json({ success: false, error })
+    return NextResponse.json(
+      {
+        success: true,
+        data: data ?? [],
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
+    );
+  } catch (error: any) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: error?.message ?? String(error),
+      },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json({
-    success: true,
-    data,
-  })
 }
