@@ -497,19 +497,12 @@ export default function Home() {
           실시간 업데이트: {lastUpdated || '로딩 중...'}
         </div>
 
-        <div className="flex flex-col md:flex-row w-full justify-center md:space-x-4 space-y-4 md:space-y-0">
-          <div>
-            <table className="w-full border border-gray-700 text-xs md:text-sm leading-none">
-              <thead>
-                <tr className="bg-gray-800">
-                  <th className="p-2">구분</th>
-                  <th className="p-2">현재값</th>
-                </tr>
-              </thead>
-
+        <div className="flex flex-col md:flex-row w-full max-w-6xl mx-auto justify-center items-stretch gap-4">
+          <div className="w-full md:w-[560px] flex-shrink-0">
+            <table className="w-full h-full border border-gray-700 text-xl md:text-3xl leading-none">
               <tbody>
-                <tr>
-                  <td className="p-2">
+                <tr className="border-b border-gray-700">
+                  <td className="px-4 py-2">
                     <a
                       href="https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW"
                       target="_blank"
@@ -519,13 +512,13 @@ export default function Home() {
                       원달러 환율
                     </a>
                   </td>
-                  <td className="p-2">
+                  <td className="px-4 py-2 text-right font-semibold">
                     {exchangeRate ? exchangeRate.toLocaleString() + ' 원' : '로딩 중...'}
                   </td>
                 </tr>
 
-                <tr>
-                  <td className="p-2">
+                <tr className="border-b border-gray-700">
+                  <td className="px-4 py-2">
                     <a
                       href="https://upbit.com/exchange?code=CRIX.UPBIT.KRW-USDT"
                       target="_blank"
@@ -535,55 +528,21 @@ export default function Home() {
                       업비트 USDT
                     </a>
                   </td>
-                  <td className="p-2">
+                  <td className="px-4 py-2 text-right font-semibold">
                     {upbitUsdtTicker ? upbitUsdtTicker.trade_price.toLocaleString() + ' 원' : '로딩 중...'}
                   </td>
                 </tr>
 
-                <tr>
-                  <td className="p-2 font-bold">업비트 BTC ÷ 해외 BTC</td>
-                  <td className="p-2">
+                <tr className="border-b border-gray-700">
+                  <td className="px-4 py-2 font-bold">업비트 BTC ÷ 해외 BTC</td>
+                  <td className="px-4 py-2 text-right font-semibold">
                     {btcDivide !== null ? btcDivide.toFixed(1) + ' 원' : '계산 중...'}
                   </td>
                 </tr>
 
                 <tr>
-                  <td className="p-2">
-                    <a
-                      href="https://upbit.com/exchange?code=CRIX.UPBIT.KRW-BTC"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-400 hover:underline"
-                    >
-                      업비트 BTC
-                    </a>
-                  </td>
-                  <td className="p-2">
-                    {btcTicker ? btcTicker.trade_price.toLocaleString() + ' 원' : '로딩 중...'}
-                  </td>
-                </tr>
-
-                <tr>
-                  <td className="p-2">
-                    <a
-                      href={foreignExchange === 'Binance'
-                        ? 'https://accounts.binance.com/register?ref=NJ3Y7YUZ'
-                        : 'https://www.bybit.com/invite?ref=OLVJA'}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-400 hover:underline"
-                    >
-                      {foreignExchange} BTC
-                    </a>
-                  </td>
-                  <td className="p-2">
-                    {btcForeignPrice !== null ? btcForeignPrice.toLocaleString() + ' USDT' : '로딩 중...'}
-                  </td>
-                </tr>
-
-                <tr>
-                  <td className="p-2 font-bold">현재 BTC 김프</td>
-                  <td className={`p-2 font-bold ${btcKimp !== null ? (btcKimp >= 0 ? 'text-red-500' : 'text-blue-500') : ''}`}>
+                  <td className="px-4 py-2 font-bold">현재 BTC 김프</td>
+                  <td className={`px-4 py-2 text-right font-bold ${btcKimp !== null ? (btcKimp >= 0 ? 'text-red-500' : 'text-blue-500') : ''}`}>
                     {btcKimp !== null ? btcKimp.toFixed(2) + '%' : '계산 중...'}
                   </td>
                 </tr>
@@ -591,15 +550,13 @@ export default function Home() {
             </table>
           </div>
 
-          <div className="flex justify-center items-center w-auto flex-shrink-0">
-            <a href="https://accounts.binance.com/register?ref=NJ3Y7YUZ" target="_blank" rel="noopener noreferrer">
-              <img src="/binance-banner2.png" alt="바이낸스 배너" className="w-[400px] h-[112px] object-contain" />
+          <div className="flex flex-col gap-2 justify-center items-center flex-shrink-0 w-full md:w-[420px]">
+            <a href="https://accounts.binance.com/register?ref=NJ3Y7YUZ" target="_blank" rel="noopener noreferrer" className="block w-full">
+              <img src="/binance-banner2.png" alt="바이낸스 배너" className="w-full h-[96px] md:h-[104px] object-contain" />
             </a>
-          </div>
 
-          <div className="flex justify-center items-center w-auto flex-shrink-0">
-            <a href="https://www.bybit.com/invite?ref=OLVJA" target="_blank" rel="noopener noreferrer">
-              <img src="/bybit-banner2.png" alt="바이빗 배너" className="w-[400px] h-[112px] object-contain" />
+            <a href="https://www.bybit.com/invite?ref=OLVJA" target="_blank" rel="noopener noreferrer" className="block w-full">
+              <img src="/bybit-banner2.png" alt="바이빗 배너" className="w-full h-[96px] md:h-[104px] object-contain" />
             </a>
           </div>
         </div>
@@ -641,9 +598,9 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="text-right">
-              <div className="text-sm text-gray-400">현재 USDT 김프</div>
-              <div className={`text-3xl font-bold ${usdtKimp !== null ? (usdtKimp >= 0 ? 'text-red-500' : 'text-blue-500') : 'text-gray-400'}`}>
+            <div className="text-right shrink-0 w-full md:w-[240px] overflow-hidden">
+              <div className="text-base md:text-lg text-gray-400">현재 USDT 김프</div>
+              <div className={`text-4xl md:text-5xl font-bold whitespace-nowrap leading-tight ${usdtKimp !== null ? (usdtKimp >= 0 ? 'text-red-500' : 'text-blue-500') : 'text-gray-400'}`}>
                 {usdtKimp !== null ? usdtKimp.toFixed(3) + '%' : '계산 중...'}
               </div>
               <div className="text-xs text-gray-500 mt-1">
