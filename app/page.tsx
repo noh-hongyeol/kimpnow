@@ -470,7 +470,7 @@ export default function Home() {
           <div ref={chartContainerRef} className="w-full h-[420px]" />
         </div>
 
-        <h1 className="text-4xl font-bold mb-6 text-center">김프 실시간</h1>
+        <h1 className="text-4xl font-bold mb-6 text-center">김프 실시간!</h1>
 
         <div className="mb-2 text-center space-x-4">
           <label className="font-semibold">국내 거래소:</label>
