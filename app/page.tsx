@@ -509,7 +509,7 @@ export default function Home() {
                       rel="noopener noreferrer"
                       className="text-blue-400 hover:underline"
                     >
-                      원달러 환율
+                      USD/KRW
                     </a>
                   </td>
                   <td className="px-4 py-2 text-right font-semibold">
@@ -525,7 +525,7 @@ export default function Home() {
                       rel="noopener noreferrer"
                       className="text-blue-400 hover:underline"
                     >
-                      업비트 USDT
+                      USDT upbit
                     </a>
                   </td>
                   <td className="px-4 py-2 text-right font-semibold">
@@ -534,14 +534,14 @@ export default function Home() {
                 </tr>
 
                 <tr className="border-b border-gray-700">
-                  <td className="px-4 py-2 font-bold">업비트 BTC ÷ 해외 BTC</td>
+                  <td className="px-4 py-2 font-bold">BTC upnit ÷ BTC binance</td>
                   <td className="px-4 py-2 text-right font-semibold">
                     {btcDivide !== null ? btcDivide.toFixed(1) + ' 원' : '계산 중...'}
                   </td>
                 </tr>
 
                 <tr>
-                  <td className="px-4 py-2 font-bold">현재 BTC 김프</td>
+                  <td className="px-4 py-2 font-bold"> BTC kimp</td>
                   <td className={`px-4 py-2 text-right font-bold ${btcKimp !== null ? (btcKimp >= 0 ? 'text-red-500' : 'text-blue-500') : ''}`}>
                     {btcKimp !== null ? btcKimp.toFixed(2) + '%' : '계산 중...'}
                   </td>
@@ -564,9 +564,9 @@ export default function Home() {
         <div className="w-full max-w-6xl mx-auto bg-gray-800 border border-gray-700 rounded-xl p-4">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-2 mb-4">
             <div>
-              <h2 className="text-2xl font-bold">USDT 김프 차트</h2>
+              <h2 className="text-2xl font-bold">USDT kimp</h2>
               <p className="text-sm text-gray-400 mt-1">
-                계산식: (업비트 USDT ÷ 네이버 고시환율 - 1) × 100 DB 히스토리 기반
+                (USDT upbit ÷ USD/KRW - 1) × 100 DB based
               </p>
               <p className="text-xs text-gray-500 mt-1">
                 상태: {chartStatus} / 저장: {lastSavedAt}
@@ -593,13 +593,13 @@ export default function Home() {
                   onClick={loadHistory}
                   className="px-3 py-1 rounded border border-gray-600 bg-gray-900 text-white text-sm"
                 >
-                  히스토리 새로고침
+                  refresh
                 </button>
               </div>
             </div>
 
             <div className="text-right shrink-0 w-full md:w-[240px] overflow-hidden">
-              <div className="text-base md:text-lg text-gray-400">현재 USDT 김프</div>
+              <div className="text-base md:text-lg text-gray-400"> USDT kimp</div>
               <div className={`text-4xl md:text-5xl font-bold whitespace-nowrap leading-tight ${usdtKimp !== null ? (usdtKimp >= 0 ? 'text-red-500' : 'text-blue-500') : 'text-gray-400'}`}>
                 {usdtKimp !== null ? usdtKimp.toFixed(3) + '%' : '계산 중...'}
               </div>
