@@ -11,7 +11,7 @@ export async function GET() {
     .from('alert_settings')
     .select('*')
     .eq('id', 1)
-    .single();
+    .maybeSingle()
 
   if (error) {
     return NextResponse.json({ success: false, error: error.message });

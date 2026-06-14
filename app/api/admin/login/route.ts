@@ -14,7 +14,7 @@ export async function POST(req: Request) {
       .from('alert_settings')
       .select('admin_password')
       .eq('id', 1)
-      .single();
+      .maybeSingle()
 
     if (error || !data) {
       return NextResponse.json({ success: false });
