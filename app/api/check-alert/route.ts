@@ -43,7 +43,6 @@ export async function GET() {
 
     const exchangeRate = Number(exchangeRes.data.rate);
     const upbitUsdtPrice = Number(upbitRes.data[0].trade_price);
-
     const usdtKimp = ((upbitUsdtPrice / exchangeRate) - 1) * 100;
 
     let direction: 'upper' | 'lower' | null = null;
@@ -69,14 +68,14 @@ export async function GET() {
 
     const cooldownMinutes = Number(settings.cooldown_minutes ?? 60);
     const maxAlertCount = Number(settings.max_alert_count ?? 5);
-    const since = new Date(Date.now() - cooldownMinutes * 60 * 1000).toISOString();
+    const now = Date.now();
 
-    const { data: recentLogs, error: logError } = await supabase
+    const { data: logs, error: logError } = await supabase
       .from('alert_logs')
       .select('*')
       .eq('direction', direction)
-      .gte('created_at', since)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(100);
 
     if (logError) {
       return NextResponse.json({
@@ -85,13 +84,47 @@ export async function GET() {
       });
     }
 
-    const recentCount = recentLogs?.length ?? 0;
+    const allLogs = logs ?? [];
+
+    const isMaxAlertLog = (message: string | null | undefined) => {
+      const text = String(message ?? '');
+      return text.includes(`[${maxAlertCount}/${maxAlertCount}]`) || text.includes('최대 알림 횟수 도달');
+    };
+
+    const latestMaxLog = allLogs.find((log) => isMaxAlertLog(log.message));
+
+    let cycleStartTime = 0;
+
+    if (latestMaxLog?.created_at) {
+      const latestMaxTime = new Date(latestMaxLog.created_at).getTime();
+      const cooldownUntil = latestMaxTime + cooldownMinutes * 60 * 1000;
+
+      if (now < cooldownUntil) {
+        return NextResponse.json({
+          success: true,
+          alerted: false,
+          reason: 'Cooldown after max alert',
+          usdtKimp,
+          direction,
+          cooldown_until: new Date(cooldownUntil).toISOString(),
+        });
+      }
+
+      cycleStartTime = cooldownUntil;
+    }
+
+    const currentCycleLogs = allLogs.filter((log) => {
+      const logTime = new Date(log.created_at).getTime();
+      return logTime > cycleStartTime;
+    });
+
+    const recentCount = currentCycleLogs.length;
 
     if (recentCount >= maxAlertCount) {
       return NextResponse.json({
         success: true,
         alerted: false,
-        reason: 'Max alert count reached during cooldown',
+        reason: 'Max alert count reached',
         usdtKimp,
         direction,
         recent_count: recentCount,
