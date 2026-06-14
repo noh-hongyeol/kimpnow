@@ -513,7 +513,7 @@ export default function Home() {
                     </a>
                   </td>
                   <td className="px-4 py-2 text-right font-semibold">
-                    {exchangeRate ? exchangeRate.toLocaleString() + '원' : '로딩 중...'}
+                    {exchangeRate ? '₩' + exchangeRate.toLocaleString() : 'Loading...'}
                   </td>
                 </tr>
 
@@ -529,14 +529,14 @@ export default function Home() {
                     </a>
                   </td>
                   <td className="px-4 py-2 text-right font-semibold">
-                    {upbitUsdtTicker ? upbitUsdtTicker.trade_price.toLocaleString() + '원' : '로딩 중...'}
+                    {upbitUsdtTicker ? '₩' + upbitUsdtTicker.trade_price.toLocaleString() : 'Loading...'}
                   </td>
                 </tr>
 
                 <tr className="border-b border-gray-700">
-                  <td className="px-4 py-2 font-bold">BTC upbit÷BTC binance</td>
+                  <td className="px-4 py-2 font-bold">BTC FX Rate</td>
                   <td className="px-4 py-2 text-right font-semibold">
-                    {btcDivide !== null ? btcDivide.toFixed(1) + '원' : '계산 중...'}
+                    {btcDivide !== null ? '₩' + btcDivide.toFixed(1) : 'Calculating...'}
                   </td>
                 </tr>
 
@@ -569,7 +569,7 @@ export default function Home() {
                 (USDT upbit ÷ USD/KRW - 1) × 100 DB based
               </p>
               <p className="text-xs text-gray-500 mt-1">
-                상태: {chartStatus} / 저장: {lastSavedAt}
+                status: {chartStatus} / save: {lastSavedAt}
               </p>
 
               <div className="flex flex-wrap gap-2 mt-4">
