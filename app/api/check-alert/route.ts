@@ -38,9 +38,7 @@ export async function GET() {
       });
     }
 
-    const exchangeRes = await axios.get(
-  'https://kimpnow.com/api/exchange'
-);
+    const exchangeRes = await axios.get('https://kimpnow.com/api/exchange');
     const upbitRes = await axios.get('https://api.upbit.com/v1/ticker?markets=KRW-USDT');
 
     const exchangeRate = Number(exchangeRes.data.rate);
@@ -70,7 +68,7 @@ export async function GET() {
     }
 
     const cooldownMinutes = Number(settings.cooldown_minutes ?? 60);
-
+    const maxAlertCount = Number(settings.max_alert_count ?? 5);
     const since = new Date(Date.now() - cooldownMinutes * 60 * 1000).toISOString();
 
     const { data: recentLogs, error: logError } = await supabase
@@ -87,21 +85,28 @@ export async function GET() {
       });
     }
 
-    if (recentLogs && recentLogs.length >= Number(settings.max_alert_count)) {
+    const recentCount = recentLogs?.length ?? 0;
+
+    if (recentCount >= maxAlertCount) {
       return NextResponse.json({
         success: true,
         alerted: false,
         reason: 'Max alert count reached during cooldown',
         usdtKimp,
         direction,
-        recent_count: recentLogs.length,
+        recent_count: recentCount,
+        max_alert_count: maxAlertCount,
+        cooldown_minutes: cooldownMinutes,
       });
     }
 
+    const alertNumber = recentCount + 1;
+    const isLastAlert = alertNumber >= maxAlertCount;
+
     const message =
       direction === 'upper'
-        ? `🚨 USDT 김프 상단 알림\n김프: ${usdtKimp.toFixed(3)}%\n기준: ${Number(settings.upper_kimp).toFixed(3)}% 이상\n업비트 USDT: ₩${upbitUsdtPrice.toLocaleString()}\n환율: ₩${exchangeRate.toLocaleString()}`
-        : `🔵 USDT 김프 하단 알림\n김프: ${usdtKimp.toFixed(3)}%\n기준: ${Number(settings.lower_kimp).toFixed(3)}% 이하\n업비트 USDT: ₩${upbitUsdtPrice.toLocaleString()}\n환율: ₩${exchangeRate.toLocaleString()}`;
+        ? `🚨 [${alertNumber}/${maxAlertCount}] USDT 김프 상단 알림\n김프: ${usdtKimp.toFixed(3)}%\n기준: ${Number(settings.upper_kimp).toFixed(3)}% 이상\n업비트 USDT: ₩${upbitUsdtPrice.toLocaleString()}\n환율: ₩${exchangeRate.toLocaleString()}\n재발송 대기: ${cooldownMinutes}분${isLastAlert ? `\n⛔ 최대 알림 횟수 도달\n${cooldownMinutes}분 후 다시 알림 가능` : ''}`
+        : `🔵 [${alertNumber}/${maxAlertCount}] USDT 김프 하단 알림\n김프: ${usdtKimp.toFixed(3)}%\n기준: ${Number(settings.lower_kimp).toFixed(3)}% 이하\n업비트 USDT: ₩${upbitUsdtPrice.toLocaleString()}\n환율: ₩${exchangeRate.toLocaleString()}\n재발송 대기: ${cooldownMinutes}분${isLastAlert ? `\n⛔ 최대 알림 횟수 도달\n${cooldownMinutes}분 후 다시 알림 가능` : ''}`;
 
     const telegram = await sendTelegram(message);
 
@@ -124,6 +129,9 @@ export async function GET() {
       alerted: true,
       direction,
       usdtKimp,
+      alert_number: alertNumber,
+      max_alert_count: maxAlertCount,
+      cooldown_minutes: cooldownMinutes,
       telegram,
     });
   } catch (error: any) {
