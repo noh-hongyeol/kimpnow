@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/check-alert",
-      "schedule": "* * * * *"
+      "schedule": "*/5 * * * *"
     }
   ]
 }
