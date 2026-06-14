@@ -11,7 +11,7 @@ export async function GET() {
     .from('alert_settings')
     .select('*')
     .eq('id', 1)
-    .maybeSingle()
+    .maybeSingle();
 
   if (error) {
     return NextResponse.json({ success: false, error: error.message });
@@ -43,8 +43,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: error.message });
     }
 
-    return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ success: false });
+    await supabase
+      .from('alert_logs')
+      .delete()
+      .in('direction', ['upper', 'lower']);
+
+    return NextResponse.json({
+      success: true,
+      reset_alert_count: true,
+    });
+  } catch (error) {
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 }
