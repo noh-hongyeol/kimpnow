@@ -615,27 +615,27 @@ export default function Home() {
           <div ref={chartContainerRef} className="w-full h-[420px]" />
         </div>
 
-        <h1 className="text-4xl font-bold mb-6 text-center">김프 실시간!</h1>
+        <h1 className="text-4xl font-bold mb-6 text-center">Real-Time Kimchi Premium</h1>
 
         <div className="mb-2 text-center space-x-4">
-          <label className="font-semibold">국내 거래소:</label>
+          <label className="font-semibold">Korean Exchange:</label>
           <select
             value={domesticExchange}
             onChange={(e) => setDomesticExchange(e.target.value as 'Upbit' | 'Bithumb')}
             className="border rounded p-1 text-black"
           >
-            <option value="Upbit">업비트</option>
-            <option value="Bithumb">빗썸</option>
+            <option value="Upbit">upbit</option>
+            <option value="Bithumb">bithumb</option>
           </select>
 
-          <label className="font-semibold ml-4">해외 거래소:</label>
+          <label className="font-semibold ml-4">Global Exchange:</label>
           <select
             value={foreignExchange}
             onChange={(e) => setForeignExchange(e.target.value as 'Binance' | 'Bybit')}
             className="border rounded p-1 text-black"
           >
-            <option value="Binance">바이낸스</option>
-            <option value="Bybit">바이빗</option>
+            <option value="Binance">binance</option>
+            <option value="Bybit">bybit</option>
           </select>
         </div>
 
@@ -645,22 +645,22 @@ export default function Home() {
               <thead>
                 <tr className="bg-gray-800">
                   <th className="md:p-2 p-1 text-left cursor-pointer" onClick={() => handleSort('market')}>
-                    코인 {renderSortArrow('market')}
+                    coin {renderSortArrow('market')}
                   </th>
                   <th className="md:p-2 p-1 text-right cursor-pointer" onClick={() => handleSort('change_rate')}>
-                    변화율(24h) {renderSortArrow('change_rate')}
+                    change(24h) {renderSortArrow('change_rate')}
                   </th>
                   <th className="md:p-2 p-1 text-right cursor-pointer" onClick={() => handleSort('acc_trade_price_24h')}>
-                    거래량 {renderSortArrow('acc_trade_price_24h')}
+                    volume {renderSortArrow('acc_trade_price_24h')}
                   </th>
                   <th className="md:p-2 p-1 text-right cursor-pointer" onClick={() => handleSort('trade_price')}>
-                    {domesticExchange} 가격 {renderSortArrow('trade_price')}
+                    {domesticExchange} price {renderSortArrow('trade_price')}
                   </th>
                   <th className="md:p-2 p-1 text-right cursor-pointer" onClick={() => handleSort('foreign_price')}>
-                    {foreignExchange} 가격 {renderSortArrow('foreign_price')}
+                    {foreignExchange} price {renderSortArrow('foreign_price')}
                   </th>
                   <th className="md:p-2 p-1 text-right cursor-pointer" onClick={() => handleSort('kimp')}>
-                    김프(%) {renderSortArrow('kimp')}
+                    kimp(%) {renderSortArrow('kimp')}
                   </th>
                 </tr>
               </thead>
