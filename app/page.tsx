@@ -41,11 +41,11 @@ const intervalMinutes: Record<IntervalKey, number> = {
 };
 
 const intervalLabels: Record<IntervalKey, string> = {
-  '1m': '1분',
-  '5m': '5분',
-  '15m': '15분',
-  '1h': '1시간',
-  '4h': '4시간',
+  '1m': '1m',
+  '5m': '5m',
+  '15m': '15m',
+  '1h': '1h',
+  '4h': '4h',
 };
 
 const toUnixTime = (createdAt: string): UTCTimestamp => {
@@ -513,7 +513,7 @@ export default function Home() {
                     </a>
                   </td>
                   <td className="px-4 py-2 text-right font-semibold">
-                    {exchangeRate ? exchangeRate.toLocaleString() + ' 원' : '로딩 중...'}
+                    {exchangeRate ? exchangeRate.toLocaleString() + '원' : '로딩 중...'}
                   </td>
                 </tr>
 
@@ -529,14 +529,14 @@ export default function Home() {
                     </a>
                   </td>
                   <td className="px-4 py-2 text-right font-semibold">
-                    {upbitUsdtTicker ? upbitUsdtTicker.trade_price.toLocaleString() + ' 원' : '로딩 중...'}
+                    {upbitUsdtTicker ? upbitUsdtTicker.trade_price.toLocaleString() + '원' : '로딩 중...'}
                   </td>
                 </tr>
 
                 <tr className="border-b border-gray-700">
-                  <td className="px-4 py-2 font-bold">BTC upnit ÷ BTC binance</td>
+                  <td className="px-4 py-2 font-bold">BTC upbit÷BTC binance</td>
                   <td className="px-4 py-2 text-right font-semibold">
-                    {btcDivide !== null ? btcDivide.toFixed(1) + ' 원' : '계산 중...'}
+                    {btcDivide !== null ? btcDivide.toFixed(1) + '원' : '계산 중...'}
                   </td>
                 </tr>
 
