@@ -724,7 +724,7 @@ export default function Home() {
         <div className="flex items-center justify-center space-x-4">
           <div>
             <div>BTC</div>
-            <div>1KduhEEivZiDGukjb1GuMTigiAPUdBKwQd</div>
+            <div>13pZynx4w4LYS65kyk86YXhQo7v2LSoGF1</div>
           </div>
           <img src="/btc_qr.png" alt="BTC QR" className="w-16 h-16" />
         </div>
