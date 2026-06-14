@@ -30,6 +30,7 @@ export async function POST(req: Request) {
     const { error } = await supabase
       .from('alert_settings')
       .update({
+        cooldown_minutes: body.cooldown_minutes,
         upper_kimp: body.upper_kimp,
         lower_kimp: body.lower_kimp,
         max_alert_count: body.max_alert_count,

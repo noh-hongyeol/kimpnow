@@ -492,6 +492,23 @@ export default function Home() {
 
   return (
     <>
+      <a
+  href="/admin"
+  style={{
+    position: 'fixed',
+    top: '12px',
+    right: '12px',
+    zIndex: 9999,
+    background: '#2563eb',
+    color: '#fff',
+    padding: '8px 14px',
+    borderRadius: '8px',
+    textDecoration: 'none',
+    fontWeight: 'bold',
+  }}
+>
+  관리자
+</a>
       <div className="min-h-screen bg-gray-900 text-white p-4 space-y-8">
         <div className={`text-lg font-bold mb-4 text-center transition duration-300 ${isFlashingUpdate ? 'text-yellow-400' : 'text-gray-300'}`}>
           실시간 업데이트: {lastUpdated || '로딩 중...'}
