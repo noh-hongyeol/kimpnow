@@ -104,6 +104,13 @@ export default function Home() {
   const lastSavedMinuteRef = useRef<string | null>(null);
 
   const [usdFuturesPrice, setUsdFuturesPrice] = useState<number>(0);
+  const [usdFuturesMeta, setUsdFuturesMeta] = useState<{
+    code?: string;
+    name?: string;
+    market?: string;
+    tradable?: boolean;
+    isStale?: boolean;
+  }>({});
   const [upbitTickers, setUpbitTickers] = useState<TickerData[]>([]);
   const [bithumbTickers, setBithumbTickers] = useState<TickerData[]>([]);
   const [binanceTickers, setBinanceTickers] = useState<BinanceTickerData[]>([]);
@@ -177,8 +184,19 @@ export default function Home() {
   };
 
   const fetchUsdFuturesPrice = async () => {
-    const res = await axios.get('/api/exchange', { params: { t: Date.now() } });
+    const res = await axios.get('/api/exchange', {
+      params: { t: Date.now() },
+      headers: { 'Cache-Control': 'no-cache' },
+    });
+
     setUsdFuturesPrice(Number(res.data.rate));
+    setUsdFuturesMeta({
+      code: res.data.code,
+      name: res.data.name,
+      market: res.data.market,
+      tradable: res.data.tradable,
+      isStale: res.data.isStale,
+    });
   };
 
   const fetchUpbitTickers = async () => {
@@ -370,6 +388,14 @@ export default function Home() {
   }, [displayedHistoryData]);
 
   useEffect(() => {
+    const interval = setInterval(() => {
+      loadHistory();
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
     const fetchAll = async () => {
       await Promise.all([
         fetchUsdFuturesPrice(),
@@ -477,8 +503,8 @@ export default function Home() {
           });
 
           await loadHistory();
-setLastSavedAt(new Date(savedRow.created_at).toLocaleString('ko-KR'));
-return;
+          setLastSavedAt(new Date(savedRow.created_at).toLocaleString('ko-KR'));
+          return;
         }
 
         await loadHistory();
@@ -526,7 +552,10 @@ return;
                     </span>
                   </td>
                   <td className="px-4 py-2 text-right font-semibold">
-                    {usdFuturesPrice ? '₩' + usdFuturesPrice.toLocaleString() : 'Loading...'}
+                    <div>{usdFuturesPrice ? '₩' + usdFuturesPrice.toLocaleString() : 'Loading...'}</div>
+                    <div className="text-xs md:text-sm text-gray-400 font-normal mt-1">
+                      {usdFuturesMeta.code ? `${usdFuturesMeta.code} / ${usdFuturesMeta.market ?? ''}` : ''}
+                    </div>
                   </td>
                 </tr>
 
