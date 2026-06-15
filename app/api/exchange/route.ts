@@ -51,9 +51,9 @@ function isExpired(year: number, month: number, nowKst: Date) {
 }
 
 function makeUsdFuturesCode(year: number, month: number) {
-  const yy = String(year).slice(-2);
+  const y = String(year).slice(-1);
   const mm = String(month).padStart(2, '0');
-  return `A75${yy}${mm}`;
+  return `A75${y}${mm}`;
 }
 
 function getCandidateCodes() {
