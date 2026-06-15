@@ -103,7 +103,7 @@ export default function Home() {
   const lineSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
   const lastSavedMinuteRef = useRef<string | null>(null);
 
-  const [exchangeRate, setExchangeRate] = useState<number>(0);
+  const [usdFuturesPrice, setUsdFuturesPrice] = useState<number>(0);
   const [upbitTickers, setUpbitTickers] = useState<TickerData[]>([]);
   const [bithumbTickers, setBithumbTickers] = useState<TickerData[]>([]);
   const [binanceTickers, setBinanceTickers] = useState<BinanceTickerData[]>([]);
@@ -176,9 +176,9 @@ export default function Home() {
     return next;
   };
 
-  const fetchExchangeRate = async () => {
-    const res = await axios.get('/api/exchange');
-    setExchangeRate(Number(res.data.rate));
+  const fetchUsdFuturesPrice = async () => {
+    const res = await axios.get('/api/exchange', { params: { t: Date.now() } });
+    setUsdFuturesPrice(Number(res.data.rate));
   };
 
   const fetchUpbitTickers = async () => {
@@ -232,8 +232,8 @@ export default function Home() {
   };
 
   const calculateKimp = (krwPrice: number, foreignPrice: number | null): number | null => {
-    if (foreignPrice === null || !exchangeRate) return null;
-    const usdToKrwPrice = foreignPrice * exchangeRate;
+    if (foreignPrice === null || !usdFuturesPrice) return null;
+    const usdToKrwPrice = foreignPrice * usdFuturesPrice;
     return ((krwPrice - usdToKrwPrice) / usdToKrwPrice) * 100;
   };
 
@@ -372,7 +372,7 @@ export default function Home() {
   useEffect(() => {
     const fetchAll = async () => {
       await Promise.all([
-        fetchExchangeRate(),
+        fetchUsdFuturesPrice(),
         fetchUpbitTickers(),
         fetchBithumbTickers(),
         fetchBinanceTickers(),
@@ -381,7 +381,7 @@ export default function Home() {
     };
 
     fetchAll();
-    const interval = setInterval(fetchAll, 60000);
+    const interval = setInterval(fetchAll, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -431,8 +431,8 @@ export default function Home() {
   const upbitUsdtTicker = upbitTickers.find((t) => t.market === 'KRW-USDT');
 
   const usdtKimp =
-    upbitUsdtTicker && exchangeRate
-      ? ((upbitUsdtTicker.trade_price / exchangeRate) - 1) * 100
+    upbitUsdtTicker && usdFuturesPrice
+      ? ((upbitUsdtTicker.trade_price / usdFuturesPrice) - 1) * 100
       : null;
 
   useEffect(() => {
@@ -520,17 +520,12 @@ export default function Home() {
               <tbody>
                 <tr className="border-b border-gray-700">
                   <td className="px-4 py-2">
-                    <a
-                      href="https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-400 hover:underline"
-                    >
-                      USD/KRW
-                    </a>
+                    <span className="text-blue-400">
+                      KRX USD Futures
+                    </span>
                   </td>
                   <td className="px-4 py-2 text-right font-semibold">
-                    {exchangeRate ? '₩' + exchangeRate.toLocaleString() : 'Loading...'}
+                    {usdFuturesPrice ? '₩' + usdFuturesPrice.toLocaleString() : 'Loading...'}
                   </td>
                 </tr>
 
@@ -583,7 +578,7 @@ export default function Home() {
             <div>
               <h2 className="text-2xl font-bold">USDT kimp</h2>
               <p className="text-sm text-gray-400 mt-1">
-                (USDT upbit ÷ USD/KRW - 1) × 100 DB based
+                (USDT upbit ÷ KRX USD Futures - 1) × 100 DB based
               </p>
               <p className="text-xs text-gray-500 mt-1">
                 status: {chartStatus} / save: {lastSavedAt}
