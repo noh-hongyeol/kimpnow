@@ -12,7 +12,6 @@ const supabase = createClient(
 
 function getKstParts() {
   const d = new Date(Date.now() + 9 * 60 * 60 * 1000);
-
   return {
     year: d.getUTCFullYear(),
     month: d.getUTCMonth() + 1,
@@ -26,7 +25,6 @@ function getKstParts() {
 function getThirdMonday(year: number, month: number) {
   const d = new Date(Date.UTC(year, month - 1, 1));
   let count = 0;
-
   while (true) {
     if (d.getUTCDay() === 1) {
       count += 1;
@@ -46,16 +44,22 @@ function getMarketStatus() {
   const now = getKstParts();
   const minutes = now.hour * 60 + now.minute;
 
-  if (now.day === 0 || now.day === 6) {
-    return { market: 'closed', tradable: false };
-  }
+  if (now.day === 0 || now.day === 6) return { market: 'closed', tradable: false };
 
-  if (minutes >= 8 * 60 + 45 && minutes <= 15 * 60 + 45) {
+  if (minutes >= 8 * 60 + 45 && minutes < 15 * 60 + 30) {
     return { market: 'day', tradable: true };
   }
 
-  if (minutes >= 18 * 60 || minutes < 6 * 60) {
+  if (minutes >= 15 * 60 + 30 && minutes <= 15 * 60 + 45) {
+    return { market: 'closing_auction', tradable: false };
+  }
+
+  if (minutes >= 18 * 60 || minutes < 5 * 60 + 55) {
     return { market: 'night', tradable: true };
+  }
+
+  if (minutes >= 5 * 60 + 55 && minutes < 6 * 60) {
+    return { market: 'night_closing', tradable: false };
   }
 
   return { market: 'closed', tradable: false };
@@ -64,14 +68,12 @@ function getMarketStatus() {
 function getCandidateCodes() {
   const now = getKstParts();
   const codes: string[] = [];
-
   let month = now.month;
   const year = now.year;
 
   for (let i = 0; i < 8; i += 1) {
     const y = year + Math.floor((month - 1) / 12);
     const m = ((month - 1) % 12) + 1;
-
     const expiryDay = getThirdMonday(y, m);
 
     if (!(now.year === y && now.month === m && now.date >= expiryDay)) {
@@ -113,12 +115,10 @@ async function getKisToken(): Promise<string> {
     throw new Error(tokenJson.error_description || JSON.stringify(tokenJson));
   }
 
-  const expiresAt = new Date(Date.now() + 23 * 60 * 60 * 1000).toISOString();
-
   await supabase.from('kis_tokens').upsert({
     id: 'main',
     access_token: tokenJson.access_token,
-    expires_at: expiresAt,
+    expires_at: new Date(Date.now() + 23 * 60 * 60 * 1000).toISOString(),
     updated_at: new Date().toISOString(),
   });
 
@@ -159,7 +159,6 @@ async function fetchDayFuturesPrice(accessToken: string, code: string) {
     name: output.hts_kor_isnm,
     price: Number(output.futs_prpr),
     volume: pickVolume(output),
-    raw: json,
   };
 }
 
@@ -194,8 +193,17 @@ async function saveLastPrice(row: {
 
 function isFresh(updatedAt: string | null | undefined, maxAgeSec: number) {
   if (!updatedAt) return false;
-  const age = Date.now() - new Date(updatedAt).getTime();
-  return age >= 0 && age <= maxAgeSec * 1000;
+  const ageMs = Date.now() - new Date(updatedAt).getTime();
+  return ageMs >= 0 && ageMs <= maxAgeSec * 1000;
+}
+
+function noStoreJson(body: any, status = 200) {
+  return NextResponse.json(body, {
+    status,
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    },
+  });
 }
 
 export async function GET() {
@@ -204,53 +212,38 @@ export async function GET() {
 
     if (status.market === 'night') {
       const last = await getLastSavedPrice();
-      const fresh = isFresh(last?.updated_at, 90) && last?.market === 'night';
+      const fresh = last?.market === 'night' && isFresh(last?.updated_at, 90);
 
-      return NextResponse.json(
-        {
-          rate: last ? Number(last.rate) : null,
-          code: last?.code ?? null,
-          name: last?.name ?? null,
-          market: 'night',
-          tradable: fresh,
-          isStale: !fresh,
-          source: fresh ? 'night_websocket_supabase' : 'last_saved_waiting_night_websocket',
-          reason: fresh ? 'night_ws_live' : 'night_ws_not_fresh',
-          lastUpdatedAt: last?.updated_at ?? null,
-        },
-        {
-          headers: {
-            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-          },
-        }
-      );
+      return noStoreJson({
+        rate: last ? Number(last.rate) : null,
+        code: last?.code ?? null,
+        name: last?.name ?? null,
+        market: 'night',
+        tradable: fresh,
+        isStale: !fresh,
+        source: fresh ? 'night_websocket_supabase' : 'night_waiting_websocket',
+        reason: fresh ? 'night_live' : 'night_price_not_fresh',
+        lastUpdatedAt: last?.updated_at ?? null,
+      });
     }
 
     if (!status.tradable) {
       const last = await getLastSavedPrice();
 
-      return NextResponse.json(
-        {
-          rate: last ? Number(last.rate) : null,
-          code: last?.code ?? null,
-          name: last?.name ?? null,
-          market: status.market,
-          tradable: false,
-          isStale: true,
-          source: 'last_saved_closed',
-          lastUpdatedAt: last?.updated_at ?? null,
-        },
-        {
-          headers: {
-            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-          },
-        }
-      );
+      return noStoreJson({
+        rate: last ? Number(last.rate) : null,
+        code: last?.code ?? null,
+        name: last?.name ?? null,
+        market: status.market,
+        tradable: false,
+        isStale: true,
+        source: 'last_saved_not_tradable',
+        lastUpdatedAt: last?.updated_at ?? null,
+      });
     }
 
     const accessToken = await getKisToken();
     const candidates = getCandidateCodes();
-
     const checked: any[] = [];
 
     for (const code of candidates) {
@@ -277,54 +270,40 @@ export async function GET() {
           tradable: true,
         });
 
-        return NextResponse.json(
-          {
-            rate: result.price,
-            code: result.code,
-            name: result.name,
-            market: 'day',
-            tradable: true,
-            isStale: false,
-            source: 'day_rest_kis',
-            volume: result.volume,
-            candidates,
-            checked,
-          },
-          {
-            headers: {
-              'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-            },
-          }
-        );
+        return noStoreJson({
+          rate: result.price,
+          code: result.code,
+          name: result.name,
+          market: 'day',
+          tradable: true,
+          isStale: false,
+          source: 'day_rest_kis',
+          volume: result.volume,
+          candidates,
+          checked,
+        });
       }
     }
 
     const last = await getLastSavedPrice();
 
-    return NextResponse.json(
-      {
-        rate: last ? Number(last.rate) : null,
-        code: last?.code ?? null,
-        name: last?.name ?? null,
-        market: 'day',
-        tradable: false,
-        isStale: true,
-        source: 'last_saved_day_no_active_contract',
-        reason: 'No active contract with volume',
-        candidates,
-        checked,
-        lastUpdatedAt: last?.updated_at ?? null,
-      },
-      {
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        },
-      }
-    );
+    return noStoreJson({
+      rate: last ? Number(last.rate) : null,
+      code: last?.code ?? null,
+      name: last?.name ?? null,
+      market: 'day',
+      tradable: false,
+      isStale: true,
+      source: 'last_saved_day_no_active_contract',
+      reason: 'No active contract with volume',
+      candidates,
+      checked,
+      lastUpdatedAt: last?.updated_at ?? null,
+    });
   } catch (error: any) {
     const last = await getLastSavedPrice();
 
-    return NextResponse.json(
+    return noStoreJson(
       {
         rate: last ? Number(last.rate) : null,
         code: last?.code ?? null,
@@ -335,12 +314,7 @@ export async function GET() {
         error: error?.message ?? String(error),
         lastUpdatedAt: last?.updated_at ?? null,
       },
-      {
-        status: 500,
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        },
-      }
+      500
     );
   }
 }
