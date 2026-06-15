@@ -1,27 +1,54 @@
 import { NextResponse } from 'next/server';
-import axios from 'axios';
-import * as cheerio from 'cheerio';
 
 export async function GET() {
   try {
-    const response = await axios.get('https://finance.naver.com/marketindex/', {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
-        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7'
+    // 토큰 발급
+    const tokenRes = await fetch(
+      'https://openapi.koreainvestment.com:9443/oauth2/tokenP',
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          grant_type: 'client_credentials',
+          appkey: process.env.KIS_APP_KEY,
+          appsecret: process.env.KIS_APP_SECRET,
+        }),
       }
+    );
+
+    const tokenJson = await tokenRes.json();
+
+    const accessToken = tokenJson.access_token;
+
+    // 미국달러선물 시세 조회
+    const res = await fetch(
+      `https://openapi.koreainvestment.com:9443/uapi/domestic-futureoption/v1/quotations/inquire-price?FID_COND_MRKT_DIV_CODE=CF&FID_INPUT_ISCD=${process.env.KIS_USD_FUTURES_CODE}`,
+      {
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+          appkey: process.env.KIS_APP_KEY!,
+          appsecret: process.env.KIS_APP_SECRET!,
+          tr_id: 'FHMIF10000000',
+        },
+      }
+    );
+
+    const json = await res.json();
+
+    // 현재가
+    const price = Number(json.output?.futs_prpr);
+
+    return NextResponse.json({
+      rate: price,
     });
-
-    const html = response.data;
-    const $ = cheerio.load(html);
-
-    const rateText = $('#exchangeList > li.on > a.head > div > span.value').first().text().trim();
-    const rate = parseFloat(rateText.replace(',', ''));
-
-    
-
-    return NextResponse.json({ rate: isNaN(rate) ? null : rate });
   } catch (error) {
-    console.error('네이버 환율 크롤링 실패:', error);
-    return NextResponse.json({ rate: null }, { status: 500 });
+    console.error(error);
+
+    return NextResponse.json(
+      { rate: null },
+      { status: 500 }
+    );
   }
 }
