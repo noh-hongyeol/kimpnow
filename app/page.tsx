@@ -553,9 +553,7 @@ export default function Home() {
                   </td>
                   <td className="px-4 py-2 text-right font-semibold">
                     <div>{usdFuturesPrice ? '₩' + usdFuturesPrice.toLocaleString() : 'Loading...'}</div>
-                    <div className="text-xs md:text-sm text-gray-400 font-normal mt-1">
-                      {usdFuturesMeta.code ? `${usdFuturesMeta.code} / ${usdFuturesMeta.market ?? ''}` : ''}
-                    </div>
+
                   </td>
                 </tr>
 
