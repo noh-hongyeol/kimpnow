@@ -18,37 +18,34 @@ export async function GET() {
       fetch('https://api.upbit.com/v1/ticker?markets=KRW-USDT', {
         cache: 'no-store',
       }),
-      fetch('https://finance.naver.com/marketindex/', {
+      fetch('https://kimpnow.com/api/exchange', {
         cache: 'no-store',
-        headers: {
-          'User-Agent': 'Mozilla/5.0',
-        },
       }),
     ]);
 
     const upbitData = await upbitRes.json();
-    const html = await exchangeRes.text();
+    const exchangeData = await exchangeRes.json();
 
     const upbitUsdtPrice = Number(upbitData?.[0]?.trade_price);
+    const usdFuturesPrice = Number(exchangeData?.rate);
 
-    const exchangeMatch = html.match(/<span class="value">([0-9,.]+)<\/span>/);
-    const exchangeRate = exchangeMatch
-      ? Number(exchangeMatch[1].replace(/,/g, ''))
-      : null;
-
-    if (!Number.isFinite(upbitUsdtPrice) || !exchangeRate || !Number.isFinite(exchangeRate)) {
+    if (
+      !Number.isFinite(upbitUsdtPrice) ||
+      !Number.isFinite(usdFuturesPrice) ||
+      usdFuturesPrice <= 0
+    ) {
       return NextResponse.json(
         {
           success: false,
-          message: '업비트 USDT 가격 또는 원달러 환율을 가져오지 못했습니다.',
+          message: '업비트 USDT 가격 또는 KRX 원달러선물 가격을 가져오지 못했습니다.',
           upbitData,
-          exchangeRate,
+          exchangeData,
         },
         { status: 500 }
       );
     }
 
-    const kimp = ((upbitUsdtPrice / exchangeRate) - 1) * 100;
+    const kimp = ((upbitUsdtPrice / usdFuturesPrice) - 1) * 100;
 
     const { data, error } = await supabase
       .from('kimp_history')
@@ -57,7 +54,7 @@ export async function GET() {
           kimp,
           upbit_price: upbitUsdtPrice,
           binance_price: null,
-          exchange_rate: exchangeRate,
+          exchange_rate: usdFuturesPrice,
         },
       ])
       .select()
@@ -78,8 +75,9 @@ export async function GET() {
       data,
       calculated: {
         upbit_usdt_price: upbitUsdtPrice,
-        exchange_rate: exchangeRate,
+        usd_futures_price: usdFuturesPrice,
         kimp,
+        exchangeData,
       },
     });
   } catch (error: any) {
