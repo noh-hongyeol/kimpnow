@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+export const dynamic = 'force-dynamic';
+
 const KIS_BASE_URL = 'https://openapi.koreainvestment.com:9443';
 
 const supabase = createClient(
@@ -10,6 +12,7 @@ const supabase = createClient(
 
 function getKstParts() {
   const d = new Date(Date.now() + 9 * 60 * 60 * 1000);
+
   return {
     year: d.getUTCFullYear(),
     month: d.getUTCMonth() + 1,
@@ -65,13 +68,12 @@ function getCandidateCodes() {
   let month = now.month;
   const year = now.year;
 
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 8; i += 1) {
     const y = year + Math.floor((month - 1) / 12);
     const m = ((month - 1) % 12) + 1;
 
     const expiryDay = getThirdMonday(y, m);
 
-    // 만기일 당일은 이미 다음 월물로 넘김
     if (!(now.year === y && now.month === m && now.date >= expiryDay)) {
       codes.push(makeUsdFuturesCode(y, m));
     }
@@ -126,15 +128,15 @@ async function getKisToken(): Promise<string> {
 function pickVolume(output: any) {
   return Number(
     output?.acml_vol ??
-    output?.futs_acml_vol ??
-    output?.cntg_vol ??
-    output?.tvol ??
-    output?.vol ??
-    0
+      output?.futs_acml_vol ??
+      output?.cntg_vol ??
+      output?.tvol ??
+      output?.vol ??
+      0
   );
 }
 
-async function fetchFuturesPrice(accessToken: string, code: string) {
+async function fetchDayFuturesPrice(accessToken: string, code: string) {
   const res = await fetch(
     `${KIS_BASE_URL}/uapi/domestic-futureoption/v1/quotations/inquire-price?FID_COND_MRKT_DIV_CODE=CF&FID_INPUT_ISCD=${code}`,
     {
@@ -190,22 +192,60 @@ async function saveLastPrice(row: {
   });
 }
 
+function isFresh(updatedAt: string | null | undefined, maxAgeSec: number) {
+  if (!updatedAt) return false;
+  const age = Date.now() - new Date(updatedAt).getTime();
+  return age >= 0 && age <= maxAgeSec * 1000;
+}
+
 export async function GET() {
   try {
     const status = getMarketStatus();
 
+    if (status.market === 'night') {
+      const last = await getLastSavedPrice();
+      const fresh = isFresh(last?.updated_at, 90) && last?.market === 'night';
+
+      return NextResponse.json(
+        {
+          rate: last ? Number(last.rate) : null,
+          code: last?.code ?? null,
+          name: last?.name ?? null,
+          market: 'night',
+          tradable: fresh,
+          isStale: !fresh,
+          source: fresh ? 'night_websocket_supabase' : 'last_saved_waiting_night_websocket',
+          reason: fresh ? 'night_ws_live' : 'night_ws_not_fresh',
+          lastUpdatedAt: last?.updated_at ?? null,
+        },
+        {
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          },
+        }
+      );
+    }
+
     if (!status.tradable) {
       const last = await getLastSavedPrice();
 
-      return NextResponse.json({
-        rate: last ? Number(last.rate) : null,
-        code: last?.code ?? null,
-        name: last?.name ?? null,
-        market: status.market,
-        tradable: false,
-        isStale: true,
-        lastUpdatedAt: last?.updated_at ?? null,
-      });
+      return NextResponse.json(
+        {
+          rate: last ? Number(last.rate) : null,
+          code: last?.code ?? null,
+          name: last?.name ?? null,
+          market: status.market,
+          tradable: false,
+          isStale: true,
+          source: 'last_saved_closed',
+          lastUpdatedAt: last?.updated_at ?? null,
+        },
+        {
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          },
+        }
+      );
     }
 
     const accessToken = await getKisToken();
@@ -214,7 +254,8 @@ export async function GET() {
     const checked: any[] = [];
 
     for (const code of candidates) {
-      const result = await fetchFuturesPrice(accessToken, code);
+      const result = await fetchDayFuturesPrice(accessToken, code);
+
       checked.push({
         code: result.code,
         name: result.name,
@@ -222,7 +263,6 @@ export async function GET() {
         volume: result.volume,
       });
 
-      // 끝난 월물은 가격만 남고 거래량이 0일 가능성이 높음
       if (
         Number.isFinite(result.price) &&
         result.price > 0 &&
@@ -233,38 +273,54 @@ export async function GET() {
           rate: result.price,
           code: result.code,
           name: result.name,
-          market: status.market,
+          market: 'day',
           tradable: true,
         });
 
-        return NextResponse.json({
-          rate: result.price,
-          code: result.code,
-          name: result.name,
-          market: status.market,
-          tradable: true,
-          isStale: false,
-          volume: result.volume,
-          candidates,
-          checked,
-        });
+        return NextResponse.json(
+          {
+            rate: result.price,
+            code: result.code,
+            name: result.name,
+            market: 'day',
+            tradable: true,
+            isStale: false,
+            source: 'day_rest_kis',
+            volume: result.volume,
+            candidates,
+            checked,
+          },
+          {
+            headers: {
+              'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            },
+          }
+        );
       }
     }
 
     const last = await getLastSavedPrice();
 
-    return NextResponse.json({
-      rate: last ? Number(last.rate) : null,
-      code: last?.code ?? null,
-      name: last?.name ?? null,
-      market: status.market,
-      tradable: false,
-      isStale: true,
-      reason: 'No active contract with volume',
-      candidates,
-      checked,
-      lastUpdatedAt: last?.updated_at ?? null,
-    });
+    return NextResponse.json(
+      {
+        rate: last ? Number(last.rate) : null,
+        code: last?.code ?? null,
+        name: last?.name ?? null,
+        market: 'day',
+        tradable: false,
+        isStale: true,
+        source: 'last_saved_day_no_active_contract',
+        reason: 'No active contract with volume',
+        candidates,
+        checked,
+        lastUpdatedAt: last?.updated_at ?? null,
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
+    );
   } catch (error: any) {
     const last = await getLastSavedPrice();
 
@@ -275,10 +331,16 @@ export async function GET() {
         name: last?.name ?? null,
         tradable: false,
         isStale: true,
+        source: 'error_last_saved',
         error: error?.message ?? String(error),
         lastUpdatedAt: last?.updated_at ?? null,
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
     );
   }
 }
