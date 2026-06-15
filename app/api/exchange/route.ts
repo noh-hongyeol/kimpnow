@@ -8,8 +8,16 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-function getKstNow() {
-  return new Date(Date.now() + 9 * 60 * 60 * 1000);
+function getKstParts() {
+  const d = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  return {
+    year: d.getUTCFullYear(),
+    month: d.getUTCMonth() + 1,
+    date: d.getUTCDate(),
+    day: d.getUTCDay(),
+    hour: d.getUTCHours(),
+    minute: d.getUTCMinutes(),
+  };
 }
 
 function getThirdMonday(year: number, month: number) {
@@ -19,35 +27,10 @@ function getThirdMonday(year: number, month: number) {
   while (true) {
     if (d.getUTCDay() === 1) {
       count += 1;
-      if (count === 3) return d;
+      if (count === 3) return d.getUTCDate();
     }
     d.setUTCDate(d.getUTCDate() + 1);
   }
-}
-
-function isExpired(year: number, month: number, nowKst: Date) {
-  const expiry = getThirdMonday(year, month);
-
-  const y = nowKst.getUTCFullYear();
-  const m = nowKst.getUTCMonth() + 1;
-  const d = nowKst.getUTCDate();
-  const h = nowKst.getUTCHours();
-  const min = nowKst.getUTCMinutes();
-
-  const ey = expiry.getUTCFullYear();
-  const em = expiry.getUTCMonth() + 1;
-  const ed = expiry.getUTCDate();
-
-  if (y > ey) return true;
-  if (y === ey && m > em) return true;
-  if (y === ey && m === em && d > ed) return true;
-
-  if (y === ey && m === em && d === ed) {
-    if (h > 11) return true;
-    if (h === 11 && min >= 30) return true;
-  }
-
-  return false;
 }
 
 function makeUsdFuturesCode(year: number, month: number) {
@@ -56,18 +39,40 @@ function makeUsdFuturesCode(year: number, month: number) {
   return `A75${y}${mm}`;
 }
 
+function getMarketStatus() {
+  const now = getKstParts();
+  const minutes = now.hour * 60 + now.minute;
+
+  if (now.day === 0 || now.day === 6) {
+    return { market: 'closed', tradable: false };
+  }
+
+  if (minutes >= 8 * 60 + 45 && minutes <= 15 * 60 + 45) {
+    return { market: 'day', tradable: true };
+  }
+
+  if (minutes >= 18 * 60 || minutes < 6 * 60) {
+    return { market: 'night', tradable: true };
+  }
+
+  return { market: 'closed', tradable: false };
+}
+
 function getCandidateCodes() {
-  const nowKst = getKstNow();
+  const now = getKstParts();
   const codes: string[] = [];
 
-  let year = nowKst.getUTCFullYear();
-  let month = nowKst.getUTCMonth() + 1;
+  let month = now.month;
+  const year = now.year;
 
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 8; i++) {
     const y = year + Math.floor((month - 1) / 12);
     const m = ((month - 1) % 12) + 1;
 
-    if (!isExpired(y, m, nowKst)) {
+    const expiryDay = getThirdMonday(y, m);
+
+    // 만기일 당일은 이미 다음 월물로 넘김
+    if (!(now.year === y && now.month === m && now.date >= expiryDay)) {
       codes.push(makeUsdFuturesCode(y, m));
     }
 
@@ -78,7 +83,6 @@ function getCandidateCodes() {
 }
 
 async function getKisToken(): Promise<string> {
-  const now = new Date();
   const safeExpire = new Date(Date.now() + 10 * 60 * 1000);
 
   const { data: saved } = await supabase
@@ -93,9 +97,7 @@ async function getKisToken(): Promise<string> {
 
   const tokenRes = await fetch(`${KIS_BASE_URL}/oauth2/tokenP`, {
     method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-    },
+    headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
       grant_type: 'client_credentials',
       appkey: process.env.KIS_APP_KEY,
@@ -115,10 +117,21 @@ async function getKisToken(): Promise<string> {
     id: 'main',
     access_token: tokenJson.access_token,
     expires_at: expiresAt,
-    updated_at: now.toISOString(),
+    updated_at: new Date().toISOString(),
   });
 
-  return tokenJson.access_token;
+  return tokenJson.access_token as string;
+}
+
+function pickVolume(output: any) {
+  return Number(
+    output?.acml_vol ??
+    output?.futs_acml_vol ??
+    output?.cntg_vol ??
+    output?.tvol ??
+    output?.vol ??
+    0
+  );
 }
 
 async function fetchFuturesPrice(accessToken: string, code: string) {
@@ -138,46 +151,132 @@ async function fetchFuturesPrice(accessToken: string, code: string) {
 
   const json = await res.json();
   const output = json.output1 || {};
-  const price = Number(output.futs_prpr);
 
   return {
-    price,
+    code,
     name: output.hts_kor_isnm,
+    price: Number(output.futs_prpr),
+    volume: pickVolume(output),
     raw: json,
   };
 }
 
+async function getLastSavedPrice() {
+  const { data } = await supabase
+    .from('futures_last_price')
+    .select('*')
+    .eq('id', 'usd_front')
+    .maybeSingle();
+
+  return data;
+}
+
+async function saveLastPrice(row: {
+  rate: number;
+  code: string;
+  name: string;
+  market: string;
+  tradable: boolean;
+}) {
+  await supabase.from('futures_last_price').upsert({
+    id: 'usd_front',
+    rate: row.rate,
+    code: row.code,
+    name: row.name,
+    market: row.market,
+    tradable: row.tradable,
+    is_stale: false,
+    updated_at: new Date().toISOString(),
+  });
+}
+
 export async function GET() {
   try {
+    const status = getMarketStatus();
+
+    if (!status.tradable) {
+      const last = await getLastSavedPrice();
+
+      return NextResponse.json({
+        rate: last ? Number(last.rate) : null,
+        code: last?.code ?? null,
+        name: last?.name ?? null,
+        market: status.market,
+        tradable: false,
+        isStale: true,
+        lastUpdatedAt: last?.updated_at ?? null,
+      });
+    }
+
     const accessToken = await getKisToken();
-    const codes = getCandidateCodes();
+    const candidates = getCandidateCodes();
 
-    for (const code of codes) {
+    const checked: any[] = [];
+
+    for (const code of candidates) {
       const result = await fetchFuturesPrice(accessToken, code);
+      checked.push({
+        code: result.code,
+        name: result.name,
+        price: result.price,
+        volume: result.volume,
+      });
 
-      if (Number.isFinite(result.price) && result.price > 0) {
+      // 끝난 월물은 가격만 남고 거래량이 0일 가능성이 높음
+      if (
+        Number.isFinite(result.price) &&
+        result.price > 0 &&
+        Number.isFinite(result.volume) &&
+        result.volume > 0
+      ) {
+        await saveLastPrice({
+          rate: result.price,
+          code: result.code,
+          name: result.name,
+          market: status.market,
+          tradable: true,
+        });
+
         return NextResponse.json({
           rate: result.price,
-          code,
+          code: result.code,
           name: result.name,
-          candidates: codes,
+          market: status.market,
+          tradable: true,
+          isStale: false,
+          volume: result.volume,
+          candidates,
+          checked,
         });
       }
     }
 
-    return NextResponse.json(
-      {
-        rate: null,
-        error: '선물 가격 조회 실패',
-        candidates: codes,
-      },
-      { status: 500 }
-    );
+    const last = await getLastSavedPrice();
+
+    return NextResponse.json({
+      rate: last ? Number(last.rate) : null,
+      code: last?.code ?? null,
+      name: last?.name ?? null,
+      market: status.market,
+      tradable: false,
+      isStale: true,
+      reason: 'No active contract with volume',
+      candidates,
+      checked,
+      lastUpdatedAt: last?.updated_at ?? null,
+    });
   } catch (error: any) {
+    const last = await getLastSavedPrice();
+
     return NextResponse.json(
       {
-        rate: null,
+        rate: last ? Number(last.rate) : null,
+        code: last?.code ?? null,
+        name: last?.name ?? null,
+        tradable: false,
+        isStale: true,
         error: error?.message ?? String(error),
+        lastUpdatedAt: last?.updated_at ?? null,
       },
       { status: 500 }
     );
