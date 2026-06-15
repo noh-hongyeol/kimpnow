@@ -476,8 +476,9 @@ export default function Home() {
             return Array.from(map.values()).sort((a, b) => Number(a.time) - Number(b.time));
           });
 
-          setLastSavedAt(new Date(savedRow.created_at).toLocaleString('ko-KR'));
-          return;
+          await loadHistory();
+setLastSavedAt(new Date(savedRow.created_at).toLocaleString('ko-KR'));
+return;
         }
 
         await loadHistory();
