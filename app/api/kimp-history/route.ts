@@ -17,7 +17,8 @@ export async function GET() {
     const { data, error } = await supabase
       .from('kimp_history')
       .select('id, created_at, kimp, upbit_price, binance_price, exchange_rate')
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: false })
+      .limit(1440);
 
     if (error) {
       return NextResponse.json(
@@ -29,10 +30,15 @@ export async function GET() {
       );
     }
 
+    const sorted = (data ?? []).sort(
+      (a, b) =>
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+
     return NextResponse.json(
       {
         success: true,
-        data: data ?? [],
+        data: sorted,
       },
       {
         headers: {
