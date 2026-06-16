@@ -295,27 +295,46 @@ const displayedHistoryData = useMemo(() => {
     return `${Math.floor(value / 100000000)}억`;
   };
 
-const loadHistory = async (intervalKey: IntervalKey = selectedInterval) => {
+const loadHistory = async (
+  intervalKey: IntervalKey = selectedInterval
+) => {
   try {
-    setChartStatus('히스토리 로딩 중');
+    setChartStatus("히스토리 로딩 중");
 
-    const res = await fetch(`/api/kimp-history?interval=${intervalKey}`, {
-      cache: 'no-store',
-    });
-      const json = await res.json();
-
-      if (!res.ok || !json.success) {
-        setChartStatus(`히스토리 실패: ${json.error || json.message || 'API 실패'}`);
-        return;
+    const res = await fetch(
+      `/api/kimp-history?range=${intervalKey}`,
+      {
+        cache: "no-store",
       }
+    );
 
-      const normalized = normalizeHistory(json.data || []);
-      setRawHistoryData(normalized);
-      setChartStatus(`히스토리 로드 완료: ${intervalLabels[selectedInterval]} ${normalized.length}개`);
-    } catch (error: any) {
-      setChartStatus(`히스토리 에러: ${error?.message ?? String(error)}`);
+    const json = await res.json();
+
+    if (!res.ok) {
+      setChartStatus(
+        `히스토리 실패: ${
+          json.error || "API 실패"
+        }`
+      );
+
+      return;
     }
-  };
+
+    const normalized = normalizeHistory(json);
+
+    setRawHistoryData(normalized);
+
+    setChartStatus(
+      `히스토리 로드 완료: ${intervalKey} ${normalized.length}개`
+    );
+  } catch (error: any) {
+    setChartStatus(
+      `히스토리 에러: ${
+        error?.message ?? String(error)
+      }`
+    );
+  }
+};
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
