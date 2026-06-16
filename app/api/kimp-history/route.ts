@@ -53,6 +53,7 @@ export async function GET(req: NextRequest) {
       {
         success: true,
         interval,
+        count: data?.length ?? 0,
         data: data ?? [],
       },
       {
