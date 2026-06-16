@@ -295,14 +295,13 @@ export default function Home() {
     return `${Math.floor(value / 100000000)}억`;
   };
 
-  const loadHistory = async () => {
-    try {
-      setChartStatus('히스토리 로딩 중');
+const loadHistory = async (intervalKey: IntervalKey = selectedInterval) => {
+  try {
+    setChartStatus('히스토리 로딩 중');
 
-      const res = await fetch(`/api/kimp-history?interval=${selectedInterval}`, {
-        cache: 'no-store',
-      });
-
+    const res = await fetch(`/api/kimp-history?interval=${intervalKey}`, {
+      cache: 'no-store',
+    });
       const json = await res.json();
 
       if (!res.ok || !json.success) {
@@ -392,9 +391,7 @@ export default function Home() {
 
     lineSeriesRef.current.setData(displayedHistoryData);
 
-    if (displayedHistoryData.length > 0) {
-      chartRef.current.timeScale().fitContent();
-    }
+
   }, [displayedHistoryData]);
 
   useEffect(() => {
@@ -641,7 +638,10 @@ export default function Home() {
                   <button
                     key={key}
                     type="button"
-                    onClick={() => setSelectedInterval(key)}
+                    onClick={() => {
+  setSelectedInterval(key);
+  loadHistory(key);
+}}
                     className={`px-3 py-1 rounded border text-sm ${
                       selectedInterval === key
                         ? 'bg-yellow-400 text-black border-yellow-400'
@@ -653,12 +653,12 @@ export default function Home() {
                 ))}
 
                 <button
-                  type="button"
-                  onClick={loadHistory}
-                  className="px-3 py-1 rounded border border-gray-600 bg-gray-900 text-white text-sm"
-                >
-                  refresh
-                </button>
+  type="button"
+  onClick={() => loadHistory(selectedInterval)}
+  className="px-3 py-1 rounded border border-gray-600 bg-gray-900 text-white text-sm"
+>
+  refresh
+</button>
               </div>
             </div>
 
