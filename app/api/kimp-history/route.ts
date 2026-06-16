@@ -1,74 +1,94 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
-export const dynamic = 'force-dynamic';
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+function getFromDate(range: string) {
+  const now = new Date();
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Missing Supabase environment variables');
+  if (range === "1m") {
+    now.setDate(now.getDate() - 7);
+    return now.toISOString();
+  }
+
+  if (range === "5m") {
+    now.setDate(now.getDate() - 30);
+    return now.toISOString();
+  }
+
+  if (range === "15m") {
+    now.setDate(now.getDate() - 180);
+    return now.toISOString();
+  }
+
+  if (range === "1h") {
+    now.setFullYear(now.getFullYear() - 3);
+    return now.toISOString();
+  }
+
+  return "1970-01-01T00:00:00.000Z";
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-type IntervalKey = '1m' | '5m' | '15m' | '1h' | '4h';
-
-const config: Record<IntervalKey, { minutes: number; days: number | null; limit: number }> = {
-  '1m': { minutes: 1, days: 7, limit: 10080 },
-  '5m': { minutes: 5, days: 30, limit: 8640 },
-  '15m': { minutes: 15, days: 180, limit: 17280 },
-  '1h': { minutes: 60, days: 1095, limit: 30000 },
-  '4h': { minutes: 240, days: null, limit: 50000 },
-};
-
-function getFromIso(days: number | null) {
-  if (days === null) return null;
-  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+function getBucketMinutes(range: string) {
+  if (range === "5m") return 5;
+  if (range === "15m") return 15;
+  if (range === "1h") return 60;
+  if (range === "4h") return 240;
+  return 1;
 }
 
-export async function GET(req: NextRequest) {
+export async function GET(req: Request) {
   try {
-    const interval =
-      (req.nextUrl.searchParams.get('interval') as IntervalKey | null) || '1m';
+    const { searchParams } = new URL(req.url);
+    const range = searchParams.get("range") || "1m";
+    const fromTime = getFromDate(range);
 
-    const selected = config[interval] || config['1m'];
+    // 1분봉은 원본 데이터 그대로 가져옴
+    if (range === "1m") {
+      const { data, error } = await supabase
+        .from("kimp_history")
+        .select("created_at, kimp")
+        .gte("created_at", fromTime)
+        .order("created_at", { ascending: true })
+        .limit(20000);
 
-    const { data, error } = await supabase.rpc('get_kimp_history_buckets', {
-      p_interval_minutes: selected.minutes,
-      p_from: getFromIso(selected.days),
-      p_limit: selected.limit,
-    });
+      if (error) {
+        console.error(error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
 
-    if (error) {
       return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 500 }
+        (data || []).map((row) => ({
+          time: row.created_at,
+          kimp: row.kimp,
+        }))
       );
     }
 
+    // 5분봉 이상은 bucket 함수 사용
+    const bucketMinutes = getBucketMinutes(range);
+
+    const { data, error } = await supabase.rpc("get_kimp_history_buckets", {
+      bucket_minutes: bucketMinutes,
+      from_time: fromTime,
+    });
+
+    if (error) {
+      console.error(error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
     return NextResponse.json(
-      {
-        success: true,
-        interval,
-        count: data?.length ?? 0,
-        data: data ?? [],
-      },
-      {
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        },
-      }
+      (data || []).map((row) => ({
+        time: row.bucket_time,
+        kimp: row.avg_kimp,
+      }))
     );
-  } catch (error: any) {
-    return NextResponse.json(
-      {
-        success: false,
-        message: error?.message ?? String(error),
-      },
-      { status: 500 }
-    );
+  } catch (err: any) {
+    console.error(err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
