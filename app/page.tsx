@@ -133,8 +133,8 @@ export default function Home() {
   const [lastSavedAt, setLastSavedAt] = useState<string>('대기 중');
 
   const displayedHistoryData = useMemo(() => {
-    return aggregateHistory(rawHistoryData, selectedInterval);
-  }, [rawHistoryData, selectedInterval]);
+    return rawHistoryData;
+  }, [rawHistoryData]);
 
   useEffect(() => {
     if (!lastUpdated) return;
@@ -299,7 +299,7 @@ export default function Home() {
     try {
       setChartStatus('히스토리 로딩 중');
 
-      const res = await fetch('/api/kimp-history', {
+      const res = await fetch(`/api/kimp-history?interval=${selectedInterval}`, {
         cache: 'no-store',
       });
 
@@ -312,7 +312,7 @@ export default function Home() {
 
       const normalized = normalizeHistory(json.data || []);
       setRawHistoryData(normalized);
-      setChartStatus(`히스토리 로드 완료: 원본 ${normalized.length}개`);
+      setChartStatus(`히스토리 로드 완료: ${intervalLabels[selectedInterval]} ${normalized.length}개`);
     } catch (error: any) {
       setChartStatus(`히스토리 에러: ${error?.message ?? String(error)}`);
     }
@@ -398,12 +398,14 @@ export default function Home() {
   }, [displayedHistoryData]);
 
   useEffect(() => {
+    loadHistory();
+
     const interval = setInterval(() => {
       loadHistory();
     }, 60000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [selectedInterval]);
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -666,7 +668,7 @@ export default function Home() {
                 {usdtKimp !== null ? usdtKimp.toFixed(3) + '%' : '계산 중...'}
               </div>
               <div className="text-xs text-gray-500 mt-1">
-                원본 {rawHistoryData.length}개 / {intervalLabels[selectedInterval]}봉 {displayedHistoryData.length}개
+                {intervalLabels[selectedInterval]} 차트 {displayedHistoryData.length}개
               </div>
               <div className="text-xs text-gray-500 mt-1">
                 마지막 저장: {lastSavedAt}
