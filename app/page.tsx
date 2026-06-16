@@ -132,9 +132,9 @@ export default function Home() {
   const [chartStatus, setChartStatus] = useState<string>('히스토리 로딩 중');
   const [lastSavedAt, setLastSavedAt] = useState<string>('대기 중');
 
-  const displayedHistoryData = useMemo(() => {
-    return rawHistoryData;
-  }, [rawHistoryData]);
+const displayedHistoryData = useMemo(() => {
+  return aggregateHistory(rawHistoryData, selectedInterval);
+}, [rawHistoryData, selectedInterval]);
 
   useEffect(() => {
     if (!lastUpdated) return;
@@ -320,10 +320,21 @@ const loadHistory = async (intervalKey: IntervalKey = selectedInterval) => {
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
-    const chart = createChart(chartContainerRef.current, {
-      height: 420,
-      autoSize: true,
-      localization: {
+const chart = createChart(chartContainerRef.current, {
+  height: 420,
+  autoSize: true,
+  handleScroll: {
+    mouseWheel: true,
+    pressedMouseMove: true,
+    horzTouchDrag: true,
+    vertTouchDrag: true,
+  },
+  handleScale: {
+    axisPressedMouseMove: true,
+    mouseWheel: true,
+    pinch: true,
+  },
+  localization: {
         locale: 'ko-KR',
         timeFormatter: (time: number) => {
           return new Date(time * 1000).toLocaleString('ko-KR', {
