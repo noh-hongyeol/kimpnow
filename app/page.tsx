@@ -301,22 +301,14 @@ const loadHistory = async (
   try {
     setChartStatus("히스토리 로딩 중");
 
-    const res = await fetch(
-      `/api/kimp-history?range=${intervalKey}`,
-      {
-        cache: "no-store",
-      }
-    );
+    const res = await fetch(`/api/kimp-history?range=${intervalKey}`, {
+      cache: "no-store",
+    });
 
     const json = await res.json();
 
     if (!res.ok) {
-      setChartStatus(
-        `히스토리 실패: ${
-          json.error || "API 실패"
-        }`
-      );
-
+      setChartStatus(`히스토리 실패: ${json.error || "API 실패"}`);
       return;
     }
 
@@ -328,11 +320,7 @@ const loadHistory = async (
       `히스토리 로드 완료: ${intervalKey} ${normalized.length}개`
     );
   } catch (error: any) {
-    setChartStatus(
-      `히스토리 에러: ${
-        error?.message ?? String(error)
-      }`
-    );
+    setChartStatus(`히스토리 에러: ${error?.message ?? String(error)}`);
   }
 };
 
