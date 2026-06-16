@@ -103,6 +103,7 @@ export default function Home() {
   const lineSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
   const lastSavedMinuteRef = useRef<string | null>(null);
 
+  const [naverExchangeRate, setNaverExchangeRate] = useState<number>(0);
   const [usdFuturesPrice, setUsdFuturesPrice] = useState<number>(0);
   const [usdFuturesMeta, setUsdFuturesMeta] = useState<{
     code?: string;
@@ -181,6 +182,15 @@ export default function Home() {
 
     setFlashStates(newFlashStates);
     return next;
+  };
+
+  const fetchNaverExchangeRate = async () => {
+    const res = await axios.get('/api/naver-exchange', {
+      params: { t: Date.now() },
+      headers: { 'Cache-Control': 'no-cache' },
+    });
+
+    setNaverExchangeRate(Number(res.data.rate));
   };
 
   const fetchUsdFuturesPrice = async () => {
@@ -398,6 +408,7 @@ export default function Home() {
   useEffect(() => {
     const fetchAll = async () => {
       await Promise.all([
+        fetchNaverExchangeRate(),
         fetchUsdFuturesPrice(),
         fetchUpbitTickers(),
         fetchBithumbTickers(),
@@ -545,6 +556,17 @@ export default function Home() {
           <div className="w-full md:w-[560px] flex-shrink-0">
             <table className="w-full h-full border border-gray-700 text-xl md:text-3xl leading-none">
               <tbody>
+                <tr className="border-b border-gray-700">
+                  <td className="px-4 py-2">
+                    <span className="text-blue-400">
+                      Naver USD/KRW
+                    </span>
+                  </td>
+                  <td className="px-4 py-2 text-right font-semibold">
+                    {naverExchangeRate ? '₩' + naverExchangeRate.toLocaleString() : 'Loading...'}
+                  </td>
+                </tr>
+
                 <tr className="border-b border-gray-700">
                   <td className="px-4 py-2">
                     <span className="text-blue-400">
