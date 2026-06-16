@@ -49,10 +49,7 @@ const intervalLabels: Record<IntervalKey, string> = {
 };
 
 const toUnixTime = (createdAt: string): UTCTimestamp => {
-  return (
-    Math.floor(new Date(createdAt).getTime() / 1000) +
-    9 * 60 * 60
-  ) as UTCTimestamp;
+  return Math.floor(new Date(createdAt).getTime() / 1000) as UTCTimestamp;
 };
 
 const normalizeHistory = (rows: any[]): LineData[] => {
@@ -64,9 +61,7 @@ const normalizeHistory = (rows: any[]): LineData[] => {
 
     if (!timeValue || kimpValue === null || kimpValue === undefined) return;
 
-    const time =
-      Math.floor(new Date(timeValue).getTime() / 1000) +
-      9 * 60 * 60;
+const time = Math.floor(new Date(timeValue).getTime() / 1000);
 
     const value = Number(kimpValue);
 
@@ -347,17 +342,18 @@ const chart = createChart(chartContainerRef.current, {
     mouseWheel: true,
     pinch: true,
   },
-  localization: {
-        locale: 'ko-KR',
-        timeFormatter: (time: number) => {
-          return new Date(time * 1000).toLocaleString('ko-KR', {
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-          });
-        },
-      },
+localization: {
+  locale: 'ko-KR',
+  timeFormatter: (time: number) => {
+    return new Date(time * 1000).toLocaleString('ko-KR', {
+      timeZone: 'Asia/Seoul',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  },
+},
       layout: {
         background: { color: '#111827' },
         textColor: '#d1d5db',
