@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
@@ -14,50 +14,46 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const PAGE_SIZE = 1000;
-const MAX_ROWS = 50000;
+type IntervalKey = '1m' | '5m' | '15m' | '1h' | '4h';
 
-export async function GET() {
+const config: Record<IntervalKey, { minutes: number; days: number | null; limit: number }> = {
+  '1m': { minutes: 1, days: 7, limit: 10080 },
+  '5m': { minutes: 5, days: 30, limit: 8640 },
+  '15m': { minutes: 15, days: 180, limit: 17280 },
+  '1h': { minutes: 60, days: 1095, limit: 30000 },
+  '4h': { minutes: 240, days: null, limit: 50000 },
+};
+
+function getFromIso(days: number | null) {
+  if (days === null) return null;
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+}
+
+export async function GET(req: NextRequest) {
   try {
-    let allRows: any[] = [];
-    let from = 0;
+    const interval =
+      (req.nextUrl.searchParams.get('interval') as IntervalKey | null) || '1m';
 
-    while (allRows.length < MAX_ROWS) {
-      const to = from + PAGE_SIZE - 1;
+    const selected = config[interval] || config['1m'];
 
-      const { data, error } = await supabase
-        .from('kimp_history')
-        .select('id, created_at, kimp, upbit_price, binance_price, exchange_rate')
-        .order('created_at', { ascending: false })
-        .range(from, to);
+    const { data, error } = await supabase.rpc('get_kimp_history_buckets', {
+      p_interval_minutes: selected.minutes,
+      p_from: getFromIso(selected.days),
+      p_limit: selected.limit,
+    });
 
-      if (error) {
-        return NextResponse.json(
-          { success: false, error: error.message },
-          { status: 500 }
-        );
-      }
-
-      if (!data || data.length === 0) break;
-
-      allRows = allRows.concat(data);
-
-      if (data.length < PAGE_SIZE) break;
-
-      from += PAGE_SIZE;
+    if (error) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 500 }
+      );
     }
-
-    const sorted = allRows.sort(
-      (a, b) =>
-        new Date(a.created_at).getTime() -
-        new Date(b.created_at).getTime()
-    );
 
     return NextResponse.json(
       {
         success: true,
-        data: sorted,
-        count: sorted.length,
+        interval,
+        data: data ?? [],
       },
       {
         headers: {
