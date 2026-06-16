@@ -55,16 +55,20 @@ const toUnixTime = (createdAt: string): UTCTimestamp => {
   ) as UTCTimestamp;
 };
 
-const normalizeHistory = (rows: KimpHistoryRow[]): LineData[] => {
+const normalizeHistory = (rows: any[]): LineData[] => {
   const map = new Map<number, LineData>();
 
   rows.forEach((row) => {
-    if (!row.created_at || row.kimp === null || row.kimp === undefined) return;
+    const timeValue = row.created_at || row.time;
+    const kimpValue = row.kimp;
+
+    if (!timeValue || kimpValue === null || kimpValue === undefined) return;
 
     const time =
-  Math.floor(new Date(row.created_at).getTime() / 1000) +
-  9 * 60 * 60;
-    const value = Number(row.kimp);
+      Math.floor(new Date(timeValue).getTime() / 1000) +
+      9 * 60 * 60;
+
+    const value = Number(kimpValue);
 
     if (!Number.isFinite(time) || !Number.isFinite(value)) return;
 
@@ -74,7 +78,9 @@ const normalizeHistory = (rows: KimpHistoryRow[]): LineData[] => {
     });
   });
 
-  return Array.from(map.values()).sort((a, b) => Number(a.time) - Number(b.time));
+  return Array.from(map.values()).sort(
+    (a, b) => Number(a.time) - Number(b.time)
+  );
 };
 
 const aggregateHistory = (data: LineData[], interval: IntervalKey): LineData[] => {
