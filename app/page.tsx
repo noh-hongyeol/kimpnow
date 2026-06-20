@@ -298,7 +298,7 @@ const displayedHistoryData = useMemo(() => {
     const isFlashing = dashboardFlashStates[key];
 
     return [
-      'inline-block rounded-lg px-2 transition-all duration-300 whitespace-nowrap',
+      'inline-block rounded-md px-1.5 transition-all duration-300 whitespace-nowrap',
       baseColorClass,
       isFlashing ? 'bg-yellow-400/20 text-yellow-300' : '',
     ].join(' ');
@@ -628,9 +628,9 @@ localization: {
           실시간 업데이트: {lastUpdated || '로딩 중...'}
         </div>
 
-        <div className="flex flex-col md:flex-row w-full max-w-[1180px] mx-auto justify-center items-stretch gap-4">
-          <div className="w-full md:w-[560px] flex-shrink-0">
-            <div className="w-full h-full border border-gray-700 bg-gray-800/40 px-3 py-2">
+        <div className="flex flex-col md:flex-row w-full max-w-[1280px] mx-auto justify-center items-stretch gap-3">
+          <div className="w-full md:w-[580px] lg:w-[610px] flex-shrink-0">
+            <div className="w-full h-full border border-gray-700 bg-gray-800/40 px-3 md:px-4 py-2">
               {[
                 {
                   key: 'naverExchange',
@@ -692,9 +692,9 @@ localization: {
               ].map((item) => (
                 <div
                   key={item.key}
-                  className="grid grid-cols-[220px_1fr] items-center h-[44px] border-b border-gray-700 last:border-b-0"
+                  className="grid grid-cols-[minmax(128px,42%)_1fr] md:grid-cols-[250px_1fr] lg:grid-cols-[270px_1fr] items-center min-h-[42px] md:min-h-[50px] border-b border-gray-700 last:border-b-0"
                 >
-                  <div className={`text-lg font-extrabold leading-none whitespace-nowrap ${item.labelColor}`}>
+                  <div className={`text-[17px] md:text-[22px] lg:text-[24px] font-extrabold leading-none whitespace-nowrap ${item.labelColor}`}>
                     {item.link ? (
                       <a
                         href={item.link}
@@ -711,7 +711,7 @@ localization: {
 
                   <div className="flex items-center justify-end min-w-0">
                     <span
-                      className={`${getDashboardValueClass(item.key, item.color)} text-[34px] leading-none font-black tracking-tight font-mono tabular-nums text-right`}
+                      className={`${getDashboardValueClass(item.key, item.color)} block min-w-[145px] md:min-w-[220px] lg:min-w-[240px] text-right text-[30px] md:text-[38px] lg:text-[42px] leading-none font-black tracking-tight tabular-nums`}
                     >
                       {item.value}
                     </span>
@@ -722,18 +722,18 @@ localization: {
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 justify-center items-stretch flex-shrink-0 w-full md:w-[560px]">
+          <div className="flex flex-col gap-2 justify-center items-stretch flex-shrink-0 w-full md:w-[560px] lg:w-[610px]">
             <a href="https://accounts.binance.com/register?ref=NJ3Y7YUZ" target="_blank" rel="noopener noreferrer" className="block w-full">
-              <img src="/binance-banner2.png" alt="바이낸스 배너" className="w-full h-[152px] object-contain" />
+              <img src="/binance-banner2.png" alt="바이낸스 배너" className="w-full h-[110px] md:h-[160px] object-contain" />
             </a>
 
             <a href="https://www.bybit.com/invite?ref=OLVJA" target="_blank" rel="noopener noreferrer" className="block w-full">
-              <img src="/bybit-banner2.png" alt="바이빗 배너" className="w-full h-[152px] object-contain" />
+              <img src="/bybit-banner2.png" alt="바이빗 배너" className="w-full h-[110px] md:h-[160px] object-contain" />
             </a>
           </div>
         </div>
 
-        <div className="w-full max-w-[1180px] mx-auto bg-gray-800 border border-gray-700 rounded-xl p-3">
+        <div className="w-full max-w-[1280px] mx-auto bg-gray-800 border border-gray-700 rounded-xl p-3">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-2 mb-2">
             <div>
               <h2 className="text-xl font-bold">USDT kimp</h2>
@@ -775,7 +775,7 @@ localization: {
 
             <div className="text-right shrink-0 w-full md:w-[300px] overflow-visible">
               <div className="text-sm md:text-base text-gray-400"> USDT kimp</div>
-              <div className="text-3xl md:text-4xl font-black whitespace-nowrap leading-tight font-mono tabular-nums">
+              <div className="text-3xl md:text-[38px] font-black whitespace-nowrap leading-tight tabular-nums">
                 <span
                   className={getDashboardValueClass(
                     'currentKimp',
