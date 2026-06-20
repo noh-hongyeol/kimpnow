@@ -16,6 +16,7 @@ type EntryBox = {
 };
 
 export default function AdminPage() {
+  const [showNetPnl, setShowNetPnl] = useState(false);
   const [password, setPassword] = useState('');
   const [loggedIn, setLoggedIn] = useState(false);
 
@@ -267,7 +268,15 @@ export default function AdminPage() {
 
             <div style={totalBoxStyle}>
               <div style={{ color: '#94a3b8', fontSize: 13 }}>Net PnL</div>
-              <div style={bigValueStyle}>₩{netPnl.toLocaleString()}</div>
+              <div
+  style={{ ...bigValueStyle, cursor: 'pointer', userSelect: 'none' }}
+  onMouseEnter={() => setShowNetPnl(true)}
+  onMouseLeave={() => setShowNetPnl(false)}
+  onClick={() => setShowNetPnl((v) => !v)}
+  title="Hover or click to show"
+>
+  {showNetPnl ? `₩${netPnl.toLocaleString()}` : '********'}
+</div>
 
               <div style={summaryGridStyle}>
                 <Info label="Entry Kimp" value={`${entryKimp.toFixed(3)}%`} />
@@ -444,13 +453,13 @@ const statusPanelStyle: React.CSSProperties = {
   position: 'fixed',
   top: 8,
   right: 8,
-  width: 210,
+  width: 110,
   background: '#020617',
   border: '1px solid #334155',
   borderRadius: 12,
   padding: 10,
   zIndex: 9999,
-  fontSize: 12,
+  fontSize: 11,
 };
 
 const statusTitleStyle: React.CSSProperties = {
@@ -462,7 +471,7 @@ const statusTitleStyle: React.CSSProperties = {
 const statusRowStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
-  gap: 8,
+  gap: 4,
   padding: '4px 0',
   whiteSpace: 'nowrap',
 };
@@ -515,7 +524,7 @@ const totalBoxStyle: React.CSSProperties = {
 };
 
 const bigValueStyle: React.CSSProperties = {
-  fontSize: 25,
+  fontSize: 32,
   fontWeight: 900,
   color: 'white',
   lineHeight: 1.1,
