@@ -13,14 +13,47 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [loggedIn, setLoggedIn] = useState(false);
 
-  const [upperKimp, setUpperKimp] = useState('0.1');
-  const [lowerKimp, setLowerKimp] = useState('-1');
+  const [upperKimp, setUpperKimp] = useState('-0.5');
+  const [lowerKimp, setLowerKimp] = useState('-1.5');
   const [maxAlertCount, setMaxAlertCount] = useState('5');
   const [alertIntervalSec, setAlertIntervalSec] = useState('60');
   const [cooldownMinutes, setCooldownMinutes] = useState('60');
 
+  const [entryUsd, setEntryUsd] = useState('1528');
+  const [contractCount, setContractCount] = useState('10');
+  const [entryUsdt, setEntryUsdt] = useState('1507');
+  const [currentUsd, setCurrentUsd] = useState<number | null>(null);
+  const [currentUsdt, setCurrentUsdt] = useState<number | null>(null);
+
   const [message, setMessage] = useState('');
   const [statusItems, setStatusItems] = useState<StatusItem[]>([]);
+
+  const entryUsdNum = Number(entryUsd);
+  const entryUsdtNum = Number(entryUsdt);
+  const contractNum = Number(contractCount);
+  const usdtAmount = contractNum * 10000;
+
+  const entryKimp =
+    entryUsdNum > 0 && entryUsdtNum > 0
+      ? ((entryUsdtNum / entryUsdNum) - 1) * 100
+      : 0;
+
+  const currentKimp =
+    currentUsd && currentUsdt
+      ? ((currentUsdt / currentUsd) - 1) * 100
+      : null;
+
+  const futuresPnl =
+    currentUsd && entryUsdNum
+      ? Math.round((entryUsdNum - currentUsd) * contractNum * 10000)
+      : 0;
+
+  const usdtPnl =
+    currentUsdt && entryUsdtNum
+      ? Math.round((currentUsdt - entryUsdtNum) * usdtAmount)
+      : 0;
+
+  const totalPnl = futuresPnl + usdtPnl;
 
   async function loadSettings() {
     const res = await fetch('/api/admin/settings');
@@ -44,6 +77,17 @@ export default function AdminPage() {
     }
   }
 
+  async function loadCurrentPrices() {
+    const exchangeRes = await fetch('/api/exchange', { cache: 'no-store' });
+    const exchangeData = await exchangeRes.json();
+
+    const upbitRes = await fetch('https://api.upbit.com/v1/ticker?markets=KRW-USDT');
+    const upbitData = await upbitRes.json();
+
+    setCurrentUsd(Number(exchangeData.rate));
+    setCurrentUsdt(Number(upbitData?.[0]?.trade_price));
+  }
+
   async function login() {
     const res = await fetch('/api/admin/login', {
       method: 'POST',
@@ -58,6 +102,7 @@ export default function AdminPage() {
       setMessage('');
       loadSettings();
       loadSystemStatus();
+      loadCurrentPrices();
     } else {
       setMessage('비밀번호가 틀렸습니다.');
     }
@@ -91,9 +136,15 @@ export default function AdminPage() {
 
     loadSettings();
     loadSystemStatus();
+    loadCurrentPrices();
 
-    const timer = setInterval(loadSystemStatus, 10000);
-    return () => clearInterval(timer);
+    const statusTimer = setInterval(loadSystemStatus, 10000);
+    const priceTimer = setInterval(loadCurrentPrices, 10000);
+
+    return () => {
+      clearInterval(statusTimer);
+      clearInterval(priceTimer);
+    };
   }, [loggedIn]);
 
   return (
@@ -139,6 +190,34 @@ export default function AdminPage() {
             <button onClick={saveSettings} style={buttonStyle}>
               설정 저장
             </button>
+
+            <div style={positionBoxStyle}>
+              <h2 style={{ fontSize: 22, marginBottom: 16 }}>포지션 계산기</h2>
+
+              <label>원달러 진입가 매도</label>
+              <input value={entryUsd} onChange={(e) => setEntryUsd(e.target.value)} style={inputStyle} />
+
+              <label>계약 수</label>
+              <input value={contractCount} onChange={(e) => setContractCount(e.target.value)} style={inputStyle} />
+
+              <label>USDT 진입가 매수</label>
+              <input value={entryUsdt} onChange={(e) => setEntryUsdt(e.target.value)} style={inputStyle} />
+
+              <label>USDT 수량</label>
+              <input value={Number.isFinite(usdtAmount) ? usdtAmount.toLocaleString() : '0'} readOnly style={inputStyle} />
+
+              <div style={resultBoxStyle}>
+                <div>진입 김프: {entryKimp.toFixed(3)}%</div>
+                <div>현재 김프: {currentKimp !== null ? currentKimp.toFixed(3) + '%' : '계산 중'}</div>
+                <div>현재 원달러: {currentUsd ? '₩' + currentUsd.toLocaleString() : '계산 중'}</div>
+                <div>현재 USDT: {currentUsdt ? '₩' + currentUsdt.toLocaleString() : '계산 중'}</div>
+                <div>선물 손익: ₩{futuresPnl.toLocaleString()}</div>
+                <div>USDT 손익: ₩{usdtPnl.toLocaleString()}</div>
+                <div style={{ fontWeight: 800, color: totalPnl >= 0 ? '#ef4444' : '#3b82f6' }}>
+                  총 손익: ₩{totalPnl.toLocaleString()}
+                </div>
+              </div>
+            </div>
           </>
         )}
 
@@ -166,7 +245,7 @@ function SystemStatusPanel({ items }: { items: StatusItem[] }) {
   );
 }
 
-function levelColor(level: StatusItem['level'] | 'closed') {
+function levelColor(level: StatusItem['level']) {
   if (level === 'green') return '#22c55e';
   if (level === 'yellow') return '#facc15';
   if (level === 'red') return '#ef4444';
@@ -248,4 +327,19 @@ const buttonStyle: React.CSSProperties = {
   fontSize: 16,
   fontWeight: 700,
   cursor: 'pointer',
+};
+
+const positionBoxStyle: React.CSSProperties = {
+  marginTop: 28,
+  paddingTop: 24,
+  borderTop: '1px solid #334155',
+};
+
+const resultBoxStyle: React.CSSProperties = {
+  marginTop: 12,
+  padding: 14,
+  borderRadius: 12,
+  background: '#020617',
+  border: '1px solid #334155',
+  lineHeight: 1.9,
 };
