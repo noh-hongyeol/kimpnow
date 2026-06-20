@@ -291,11 +291,13 @@ export default function AdminPage() {
                 <Info label="Current USD Futures" value={currentUsd ? `₩${currentUsd.toLocaleString()}` : 'Loading'} />
                 <Info label="Current USDT" value={currentUsdt ? `₩${currentUsdt.toLocaleString()}` : 'Loading'} />
 
-                <Info label="Futures PnL" value={`{futuresPnl.toLocaleString()}`} />
-                <Info label="USDT PnL" value={`{usdtPnl.toLocaleString()}`} />
+                <Info label="Futures PnL" value={futuresPnl.toLocaleString()} />
 
-                <Info label="Gross PnL" value={`{grossPnl.toLocaleString()}`} />
-                <Info label="Total Fee" value={`-{totalFee.toLocaleString()}`} />
+<Info label="USDT PnL" value={usdtPnl.toLocaleString()} />
+
+<Info label="Gross PnL" value={grossPnl.toLocaleString()} />
+
+<Info label="Total Fee" value={`-${totalFee.toLocaleString()}`} />
               </div>
             </div>
 
