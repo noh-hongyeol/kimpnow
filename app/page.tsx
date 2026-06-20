@@ -629,16 +629,16 @@ localization: {
         </div>
 
         <div className="flex flex-col md:flex-row w-full max-w-6xl mx-auto justify-center items-center gap-3">
-          <div className="w-full md:w-[560px] flex-shrink-0">
+          <div className="w-full md:w-[520px] flex-shrink-0">
             <table className="w-full h-full border border-gray-700 bg-gray-800/40 text-base leading-tight">
               <tbody>
                 <tr className="border-b border-gray-700">
-                  <td className="px-3 py-1 align-middle">
-                    <span className="text-sm md:text-base font-bold text-blue-400">
+                  <td className="px-3 py-0.5 align-middle">
+                    <span className="text-base font-bold text-blue-400 whitespace-nowrap">
                       Naver USD/KRW
                     </span>
                   </td>
-                  <td className="px-3 py-1 text-right align-middle font-black text-2xl md:text-3xl lg:text-4xl tracking-tight">
+                  <td className="px-2 py-0.5 text-right align-middle font-black text-3xl tracking-tight font-mono tabular-nums">
                     <span className={getDashboardValueClass('naverExchange')}>
                       {naverExchangeRate ? '₩' + naverExchangeRate.toLocaleString() : 'Loading...'}
                     </span>
@@ -646,12 +646,12 @@ localization: {
                 </tr>
 
                 <tr className="border-b border-gray-700">
-                  <td className="px-3 py-1 align-middle">
-                    <span className="text-sm md:text-base font-bold text-blue-400">
+                  <td className="px-3 py-0.5 align-middle">
+                    <span className="text-base font-bold text-blue-400 whitespace-nowrap">
                       Current USD Futures
                     </span>
                   </td>
-                  <td className="px-3 py-1 text-right align-middle font-black text-2xl md:text-3xl lg:text-4xl tracking-tight">
+                  <td className="px-2 py-0.5 text-right align-middle font-black text-3xl tracking-tight font-mono tabular-nums">
                     <span className={getDashboardValueClass('usdFutures')}>
                       {usdFuturesPrice ? '₩' + usdFuturesPrice.toLocaleString() : 'Loading...'}
                     </span>
@@ -660,17 +660,17 @@ localization: {
                 </tr>
 
                 <tr className="border-b border-gray-700">
-                  <td className="px-3 py-1 align-middle">
+                  <td className="px-3 py-0.5 align-middle">
                     <a
                       href="https://upbit.com/exchange?code=CRIX.UPBIT.KRW-USDT"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm md:text-base font-bold text-blue-400 hover:underline"
+                      className="text-base font-bold text-blue-400 hover:underline whitespace-nowrap"
                     >
                       Current USDT
                     </a>
                   </td>
-                  <td className="px-3 py-1 text-right align-middle font-black text-2xl md:text-3xl lg:text-4xl tracking-tight">
+                  <td className="px-2 py-0.5 text-right align-middle font-black text-3xl tracking-tight font-mono tabular-nums">
                     <span className={getDashboardValueClass('currentUsdt')}>
                       {upbitUsdtTicker ? '₩' + upbitUsdtTicker.trade_price.toLocaleString() : 'Loading...'}
                     </span>
@@ -679,12 +679,12 @@ localization: {
                 </tr>
 
                 <tr className="border-b border-gray-700">
-                  <td className="px-3 py-1 align-middle">
-                    <span className="text-sm md:text-base font-bold text-blue-400">
+                  <td className="px-3 py-0.5 align-middle">
+                    <span className="text-base font-bold text-blue-400 whitespace-nowrap">
                       Current Kimp
                     </span>
                   </td>
-                  <td className="px-3 py-1 text-right align-middle font-black text-2xl md:text-3xl lg:text-4xl tracking-tight">
+                  <td className="px-2 py-0.5 text-right align-middle font-black text-3xl tracking-tight font-mono tabular-nums">
                     <span
                       className={getDashboardValueClass(
                         'currentKimp',
@@ -698,12 +698,12 @@ localization: {
                 </tr>
 
                 <tr className="border-b border-gray-700">
-                  <td className="px-3 py-1 align-middle">
-                    <span className="text-sm md:text-base font-bold text-blue-400">
+                  <td className="px-3 py-0.5 align-middle">
+                    <span className="text-base font-bold text-blue-400 whitespace-nowrap">
                       Current Spread
                     </span>
                   </td>
-                  <td className="px-3 py-1 text-right align-middle font-black text-2xl md:text-3xl lg:text-4xl tracking-tight">
+                  <td className="px-2 py-0.5 text-right align-middle font-black text-3xl tracking-tight font-mono tabular-nums">
                     <span
                       className={getDashboardValueClass(
                         'currentSpread',
@@ -717,12 +717,12 @@ localization: {
                 </tr>
 
                 <tr className="border-b border-gray-700">
-                  <td className="px-3 py-1 align-middle">
-                    <span className="text-sm md:text-base font-bold text-gray-300">
+                  <td className="px-3 py-0.5 align-middle">
+                    <span className="text-base font-bold text-gray-300 whitespace-nowrap">
                       BTC FX Rate
                     </span>
                   </td>
-                  <td className="px-3 py-1 text-right align-middle font-black text-2xl md:text-3xl lg:text-4xl tracking-tight">
+                  <td className="px-2 py-0.5 text-right align-middle font-black text-3xl tracking-tight font-mono tabular-nums">
                     <span className={getDashboardValueClass('btcDivide')}>
                       {btcDivide !== null ? '₩' + btcDivide.toFixed(1) : 'Calculating...'}
                     </span>
@@ -730,12 +730,12 @@ localization: {
                 </tr>
 
                 <tr>
-                  <td className="px-3 py-1 align-middle">
-                    <span className="text-sm md:text-base font-bold text-gray-300">
+                  <td className="px-3 py-0.5 align-middle">
+                    <span className="text-base font-bold text-gray-300 whitespace-nowrap">
                       BTC kimp
                     </span>
                   </td>
-                  <td className="px-3 py-1 text-right align-middle font-black text-2xl md:text-3xl lg:text-4xl tracking-tight">
+                  <td className="px-2 py-0.5 text-right align-middle font-black text-3xl tracking-tight font-mono tabular-nums">
                     <span
                       className={getDashboardValueClass(
                         'btcKimp',
@@ -751,18 +751,18 @@ localization: {
             </table>
           </div>
 
-          <div className="flex flex-col gap-1 justify-center items-center flex-shrink-0 w-full md:w-[340px]">
+          <div className="flex flex-col gap-2 justify-center items-center flex-shrink-0 w-full md:w-[520px]">
             <a href="https://accounts.binance.com/register?ref=NJ3Y7YUZ" target="_blank" rel="noopener noreferrer" className="block w-full">
-              <img src="/binance-banner2.png" alt="바이낸스 배너" className="w-full h-[70px] md:h-[82px] object-contain" />
+              <img src="/binance-banner2.png" alt="바이낸스 배너" className="w-full h-[118px] md:h-[140px] object-contain" />
             </a>
 
             <a href="https://www.bybit.com/invite?ref=OLVJA" target="_blank" rel="noopener noreferrer" className="block w-full">
-              <img src="/bybit-banner2.png" alt="바이빗 배너" className="w-full h-[70px] md:h-[82px] object-contain" />
+              <img src="/bybit-banner2.png" alt="바이빗 배너" className="w-full h-[118px] md:h-[140px] object-contain" />
             </a>
           </div>
         </div>
 
-        <div className="w-full max-w-6xl mx-auto bg-gray-800 border border-gray-700 rounded-xl p-3">
+        <div className="w-full max-w-[1120px] mx-auto bg-gray-800 border border-gray-700 rounded-xl p-3">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-2 mb-2">
             <div>
               <h2 className="text-xl font-bold">USDT kimp</h2>
@@ -804,7 +804,7 @@ localization: {
 
             <div className="text-right shrink-0 w-full md:w-[280px] overflow-visible">
               <div className="text-sm md:text-base text-gray-400"> USDT kimp</div>
-              <div className="text-3xl md:text-4xl font-black whitespace-nowrap leading-tight">
+              <div className="text-2xl md:text-3xl font-black whitespace-nowrap leading-tight font-mono tabular-nums">
                 <span
                   className={getDashboardValueClass(
                     'currentKimp',
