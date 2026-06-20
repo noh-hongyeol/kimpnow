@@ -387,13 +387,14 @@ export default function AdminPage() {
     label="Current Kimp"
     value={currentKimp !== null ? `${currentKimp.toFixed(3)}%` : 'Loading'}
   />
-  <Info label="Entry Kimp" value={`${entryKimp.toFixed(3)}%`} />
-  <Info label="Entry Spread" value={entrySpread.toFixed(1)} />
-
-  <Info
+    <Info
     label="Current Spread"
     value={currentSpread !== null ? currentSpread.toFixed(1) : 'Loading'}
   />
+
+  <Info label="Entry Kimp" value={`${entryKimp.toFixed(3)}%`} />
+  <Info label="Entry Spread" value={entrySpread.toFixed(1)} />
+
 
   <Info label="Avg USD Entry" value={avgUsdEntry.toFixed(1)} />
 
