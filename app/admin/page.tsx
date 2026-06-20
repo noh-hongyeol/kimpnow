@@ -133,10 +133,7 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(
-      'kimpnow_position_v3',
-      JSON.stringify({ entries })
-    );
+    localStorage.setItem('kimpnow_position_v3', JSON.stringify({ entries }));
   }, [entries]);
 
   function updateEntry(index: number, key: keyof EntryBox, value: string) {
@@ -240,6 +237,99 @@ export default function AdminPage() {
 
   return (
     <main style={mainStyle}>
+      <style jsx global>{`
+        @media (max-width: 768px) {
+          main {
+            padding: 8px 5px !important;
+            overflow-x: hidden !important;
+          }
+
+          .dashboard {
+            gap: 8px !important;
+          }
+
+          .position-card {
+            width: 100% !important;
+            padding: 9px !important;
+            order: 1 !important;
+            box-sizing: border-box !important;
+          }
+
+          .admin-card {
+            width: 100% !important;
+            padding: 9px !important;
+            order: 2 !important;
+            box-sizing: border-box !important;
+          }
+
+          .position-card h2 {
+            font-size: 19px !important;
+            margin-bottom: 8px !important;
+          }
+
+          .total-box {
+            padding: 9px !important;
+            margin-bottom: 8px !important;
+          }
+
+          .summary-grid {
+            grid-template-columns: 1fr !important;
+            gap: 5px !important;
+            margin-top: 8px !important;
+            padding-top: 8px !important;
+          }
+
+          .info-row {
+            gap: 8px !important;
+          }
+
+          .info-label {
+            font-size: 10px !important;
+            min-width: 95px !important;
+          }
+
+          .big-value {
+            font-size: 18px !important;
+          }
+
+          .entry-grid {
+            grid-template-columns: 1fr !important;
+            gap: 7px !important;
+          }
+
+          .entry-box {
+            padding: 8px !important;
+          }
+
+          .entry-box h3 {
+            font-size: 15px !important;
+            margin-bottom: 7px !important;
+          }
+
+          .position-card input,
+          .admin-card input {
+            padding: 6px !important;
+            font-size: 12px !important;
+            margin-top: 4px !important;
+            margin-bottom: 6px !important;
+          }
+
+          .position-card label,
+          .admin-card label {
+            font-size: 11px !important;
+          }
+
+          .system-panel {
+            position: fixed !important;
+            top: 6px !important;
+            right: 6px !important;
+            width: 138px !important;
+            padding: 7px !important;
+            font-size: 10px !important;
+          }
+        }
+      `}</style>
+
       {loggedIn && <SystemStatusPanel items={statusItems} />}
 
       {!loggedIn ? (
@@ -262,52 +352,51 @@ export default function AdminPage() {
           {message && <p style={{ marginTop: 16, color: '#38bdf8' }}>{message}</p>}
         </div>
       ) : (
-        <div style={dashboardStyle}>
-          <div style={positionCardStyle}>
+        <div style={dashboardStyle} className="dashboard">
+          <div style={positionCardStyle} className="position-card">
             <h2 style={{ fontSize: 26, marginBottom: 14 }}>Position Calculator</h2>
 
-            <div style={totalBoxStyle}>
+            <div style={totalBoxStyle} className="total-box">
               <div style={{ color: '#94a3b8', fontSize: 13 }}>Net PnL</div>
               <div
-  style={{ ...bigValueStyle, cursor: 'pointer', userSelect: 'none' }}
-  onMouseEnter={() => setShowNetPnl(true)}
-  onMouseLeave={() => setShowNetPnl(false)}
-  onClick={() => setShowNetPnl((v) => !v)}
-  title="Hover or click to show"
->
-  {showNetPnl ? `₩${netPnl.toLocaleString()}` : '********'}
-</div>
+                className="big-value"
+                style={{ ...bigValueStyle, cursor: 'pointer', userSelect: 'none' }}
+                onMouseEnter={() => setShowNetPnl(true)}
+                onMouseLeave={() => setShowNetPnl(false)}
+                onClick={() => setShowNetPnl((v) => !v)}
+                title="Hover or click to show"
+              >
+                {showNetPnl ? netPnl.toLocaleString() : '********'}
+              </div>
 
-              <div style={summaryGridStyle}>
+              <div style={summaryGridStyle} className="summary-grid">
                 <Info label="Entry Kimp" value={`${entryKimp.toFixed(3)}%`} />
                 <Info label="Current Kimp" value={currentKimp !== null ? `${currentKimp.toFixed(3)}%` : 'Loading'} />
 
-                <Info label="Entry Spread" value={`₩${entrySpread.toFixed(1)}`} />
-                <Info label="Current Spread" value={currentSpread !== null ? `₩${currentSpread.toFixed(1)}` : 'Loading'} />
+                <Info label="Entry Spread" value={entrySpread.toFixed(1)} />
+                <Info label="Current Spread" value={currentSpread !== null ? currentSpread.toFixed(1) : 'Loading'} />
 
-                <Info label="Avg USD Entry" value={`₩${avgUsdEntry.toFixed(1)}`} />
-                <Info label="Avg USDT Entry" value={`₩${avgUsdtEntry.toFixed(1)}`} />
+                <Info label="Avg USD Entry" value={avgUsdEntry.toFixed(1)} />
+                <Info label="Avg USDT Entry" value={avgUsdtEntry.toFixed(1)} />
 
-                <Info label="Current USD Futures" value={currentUsd ? `₩${currentUsd.toLocaleString()}` : 'Loading'} />
-                <Info label="Current USDT" value={currentUsdt ? `₩${currentUsdt.toLocaleString()}` : 'Loading'} />
+                <Info label="Current USD Futures" value={currentUsd ? currentUsd.toLocaleString() : 'Loading'} />
+                <Info label="Current USDT" value={currentUsdt ? currentUsdt.toLocaleString() : 'Loading'} />
 
                 <Info label="Futures PnL" value={futuresPnl.toLocaleString()} />
+                <Info label="USDT PnL" value={usdtPnl.toLocaleString()} />
 
-<Info label="USDT PnL" value={usdtPnl.toLocaleString()} />
-
-<Info label="Gross PnL" value={grossPnl.toLocaleString()} />
-
-<Info label="Total Fee" value={`-${totalFee.toLocaleString()}`} />
+                <Info label="Gross PnL" value={grossPnl.toLocaleString()} />
+                <Info label="Total Fee" value={`-${totalFee.toLocaleString()}`} />
               </div>
             </div>
 
-            <div style={entryGridStyle}>
+            <div style={entryGridStyle} className="entry-grid">
               {entries.map((entry, index) => {
                 const contracts = Number(entry.contracts);
                 const validAmount = contracts > 0 ? contracts * 10000 : 0;
 
                 return (
-                  <div key={index} style={entryBoxStyle}>
+                  <div key={index} style={entryBoxStyle} className="entry-box">
                     <h3 style={entryTitleStyle}>Entry {index + 1}</h3>
 
                     <label>USD Futures Short</label>
@@ -343,7 +432,7 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div style={adminCardStyle}>
+          <div style={adminCardStyle} className="admin-card">
             <h1 style={{ fontSize: 20, marginBottom: 16 }}>Kimpnow Admin</h1>
 
             <label>Upper Alert (%)</label>
@@ -373,16 +462,16 @@ export default function AdminPage() {
 
 function Info({ label, value }: { label: string; value: string }) {
   return (
-    <div style={infoRowStyle}>
-      <div style={infoLabelStyle}>{label}</div>
-      <div style={bigValueStyle}>{value}</div>
+    <div style={infoRowStyle} className="info-row">
+      <div style={infoLabelStyle} className="info-label">{label}</div>
+      <div style={bigValueStyle} className="big-value">{value}</div>
     </div>
   );
 }
 
 function SystemStatusPanel({ items }: { items: StatusItem[] }) {
   return (
-    <div style={statusPanelStyle}>
+    <div style={statusPanelStyle} className="system-panel">
       <div style={statusTitleStyle}>SYSTEM</div>
       {items.map((item) => (
         <div key={item.id} style={statusRowStyle}>
