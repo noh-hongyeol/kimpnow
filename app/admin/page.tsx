@@ -291,11 +291,11 @@ export default function AdminPage() {
                 <Info label="Current USD Futures" value={currentUsd ? `₩${currentUsd.toLocaleString()}` : 'Loading'} />
                 <Info label="Current USDT" value={currentUsdt ? `₩${currentUsdt.toLocaleString()}` : 'Loading'} />
 
-                <Info label="Futures PnL" value={`₩${futuresPnl.toLocaleString()}`} />
-                <Info label="USDT PnL" value={`₩${usdtPnl.toLocaleString()}`} />
+                <Info label="Futures PnL" value={`{futuresPnl.toLocaleString()}`} />
+                <Info label="USDT PnL" value={`{usdtPnl.toLocaleString()}`} />
 
-                <Info label="Gross PnL" value={`₩${grossPnl.toLocaleString()}`} />
-                <Info label="Total Fee" value={`-₩${totalFee.toLocaleString()}`} />
+                <Info label="Gross PnL" value={`{grossPnl.toLocaleString()}`} />
+                <Info label="Total Fee" value={`-{totalFee.toLocaleString()}`} />
               </div>
             </div>
 
@@ -453,7 +453,7 @@ const statusPanelStyle: React.CSSProperties = {
   position: 'fixed',
   top: 8,
   right: 8,
-  width: 150,
+  width: 140,
   background: '#020617',
   border: '1px solid #334155',
   borderRadius: 12,
