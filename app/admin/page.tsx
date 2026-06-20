@@ -369,25 +369,45 @@ export default function AdminPage() {
                 {showNetPnl ? netPnl.toLocaleString() : '********'}
               </div>
 
-              <div style={summaryGridStyle} className="summary-grid">
-                <Info label="Entry Kimp" value={`${entryKimp.toFixed(3)}%`} />
-                <Info label="Current Kimp" value={currentKimp !== null ? `${currentKimp.toFixed(3)}%` : 'Loading'} />
+<div style={summaryGridStyle} className="summary-grid">
 
-                <Info label="Entry Spread" value={entrySpread.toFixed(1)} />
-                <Info label="Current Spread" value={currentSpread !== null ? currentSpread.toFixed(1) : 'Loading'} />
+  <Info
+    label="Current USD Futures"
+    value={currentUsd ? currentUsd.toLocaleString() : 'Loading'}
+  />
 
-                <Info label="Avg USD Entry" value={avgUsdEntry.toFixed(1)} />
-                <Info label="Avg USDT Entry" value={avgUsdtEntry.toFixed(1)} />
+  <Info
+    label="Current USDT"
+    value={currentUsdt ? currentUsdt.toLocaleString() : 'Loading'}
+  />
 
-                <Info label="Current USD Futures" value={currentUsd ? currentUsd.toLocaleString() : 'Loading'} />
-                <Info label="Current USDT" value={currentUsdt ? currentUsdt.toLocaleString() : 'Loading'} />
+  <Info label="Entry Kimp" value={`${entryKimp.toFixed(3)}%`} />
 
-                <Info label="Futures PnL" value={futuresPnl.toLocaleString()} />
-                <Info label="USDT PnL" value={usdtPnl.toLocaleString()} />
+  <Info
+    label="Current Kimp"
+    value={currentKimp !== null ? `${currentKimp.toFixed(3)}%` : 'Loading'}
+  />
 
-                <Info label="Gross PnL" value={grossPnl.toLocaleString()} />
-                <Info label="Total Fee" value={`-${totalFee.toLocaleString()}`} />
-              </div>
+  <Info label="Entry Spread" value={entrySpread.toFixed(1)} />
+
+  <Info
+    label="Current Spread"
+    value={currentSpread !== null ? currentSpread.toFixed(1) : 'Loading'}
+  />
+
+  <Info label="Avg USD Entry" value={avgUsdEntry.toFixed(1)} />
+
+  <Info label="Avg USDT Entry" value={avgUsdtEntry.toFixed(1)} />
+
+  <Info label="Futures PnL" value={futuresPnl.toLocaleString()} />
+
+  <Info label="USDT PnL" value={usdtPnl.toLocaleString()} />
+
+  <Info label="Gross PnL" value={grossPnl.toLocaleString()} />
+
+  <Info label="Total Fee" value={`-${totalFee.toLocaleString()}`} />
+
+</div>
             </div>
 
             <div style={entryGridStyle} className="entry-grid">
