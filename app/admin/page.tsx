@@ -453,7 +453,7 @@ const statusPanelStyle: React.CSSProperties = {
   position: 'fixed',
   top: 8,
   right: 8,
-  width: 110,
+  width: 150,
   background: '#020617',
   border: '1px solid #334155',
   borderRadius: 12,
