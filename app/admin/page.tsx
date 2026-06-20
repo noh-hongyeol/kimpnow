@@ -381,13 +381,13 @@ export default function AdminPage() {
     value={currentUsdt ? currentUsdt.toLocaleString() : 'Loading'}
   />
 
-  <Info label="Entry Kimp" value={`${entryKimp.toFixed(3)}%`} />
+  
 
   <Info
     label="Current Kimp"
     value={currentKimp !== null ? `${currentKimp.toFixed(3)}%` : 'Loading'}
   />
-
+  <Info label="Entry Kimp" value={`${entryKimp.toFixed(3)}%`} />
   <Info label="Entry Spread" value={entrySpread.toFixed(1)} />
 
   <Info
