@@ -237,7 +237,7 @@ export default function AdminPage() {
 
   return (
     <main style={mainStyle}>
-      <style jsx global>{`
+      <style>{`
         @media (max-width: 768px) {
           main {
             padding: 8px 5px !important;
