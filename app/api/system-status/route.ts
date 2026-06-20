@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import axios from 'axios';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,8 +11,7 @@ const supabase = createClient(
 
 function ageSeconds(dateValue: string | null | undefined) {
   if (!dateValue) return null;
-  const diff = Date.now() - new Date(dateValue).getTime();
-  return Math.floor(diff / 1000);
+  return Math.floor((Date.now() - new Date(dateValue).getTime()) / 1000);
 }
 
 function getLevel(age: number | null, greenSec: number, yellowSec: number) {
@@ -21,13 +21,24 @@ function getLevel(age: number | null, greenSec: number, yellowSec: number) {
   return 'red';
 }
 
+function getKrxLevel(exchangeData: any) {
+  if (!exchangeData) return 'none';
+
+  if (!exchangeData.tradable) return 'closed';
+
+  if (exchangeData.isStale) return 'red';
+
+  return 'green';
+}
+
 export async function GET() {
   try {
-    const { data: futures } = await supabase
-      .from('futures_last_price')
-      .select('updated_at, market, rate, code')
-      .eq('id', 'usd_front')
-      .maybeSingle();
+    const exchangeRes = await axios.get('https://kimpnow.com/api/exchange', {
+      params: { t: Date.now() },
+      headers: { 'Cache-Control': 'no-cache' },
+    });
+
+    const exchangeData = exchangeRes.data;
 
     const { data: kimp } = await supabase
       .from('kimp_history')
@@ -47,28 +58,34 @@ export async function GET() {
       label: string,
       updatedAt: string | null | undefined,
       greenSec = 120,
-      yellowSec = 300,
-      extra: any = {}
+      yellowSec = 300
     ) => {
       const age = ageSeconds(updatedAt);
+
       return {
         id,
         label,
         age,
         level: getLevel(age, greenSec, yellowSec),
         updatedAt: updatedAt ?? null,
-        ...extra,
       };
     };
+
+    const krxAge = ageSeconds(exchangeData?.lastUpdatedAt);
 
     return NextResponse.json({
       success: true,
       items: [
-        make('krx_live', 'KRX LIVE', futures?.updated_at, 90, 300, {
-          market: futures?.market ?? null,
-          rate: futures?.rate ?? null,
-          code: futures?.code ?? null,
-        }),
+        {
+          id: 'krx_live',
+          label: exchangeData?.tradable ? 'KRX LIVE' : 'KRX CLOSED',
+          age: krxAge,
+          level: getKrxLevel(exchangeData),
+          updatedAt: exchangeData?.lastUpdatedAt ?? null,
+          market: exchangeData?.market ?? null,
+          source: exchangeData?.source ?? null,
+          rate: exchangeData?.rate ?? null,
+        },
         make('kimp_save', 'KIMP SAVE', kimp?.created_at, 150, 300),
         make('alert_cron', 'ALERT CRON', hb.get('check_alert')?.updated_at, 150, 300),
         make('kis_ws', 'KIS WS', hb.get('kis_ws')?.updated_at, 90, 300),

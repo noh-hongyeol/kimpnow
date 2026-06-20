@@ -6,7 +6,7 @@ type StatusItem = {
   id: string;
   label: string;
   age: number | null;
-  level: 'green' | 'yellow' | 'red' | 'none';
+  level: 'green' | 'yellow' | 'red' | 'none' | 'closed';
 };
 
 export default function AdminPage() {
@@ -166,10 +166,11 @@ function SystemStatusPanel({ items }: { items: StatusItem[] }) {
   );
 }
 
-function levelColor(level: StatusItem['level']) {
+function levelColor(level: StatusItem['level'] | 'closed') {
   if (level === 'green') return '#22c55e';
   if (level === 'yellow') return '#facc15';
   if (level === 'red') return '#ef4444';
+  if (level === 'closed') return '#94a3b8';
   return '#64748b';
 }
 

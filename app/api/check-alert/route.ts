@@ -24,9 +24,17 @@ async function sendTelegram(text: string) {
 
   return res.json();
 }
-
+async function writeHeartbeat(status: string, message: string) {
+  await supabase.from('system_heartbeats').upsert({
+    id: 'check_alert',
+    status,
+    message,
+    updated_at: new Date().toISOString(),
+  });
+}
 export async function GET() {
   try {
+    await writeHeartbeat('running', 'check-alert executed');
     const { data: settings, error: settingsError } = await supabase
       .from('alert_settings')
       .select('*')
