@@ -103,6 +103,7 @@ export default function Home() {
   const chartRef = useRef<IChartApi | null>(null);
   const lineSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
   const lastSavedMinuteRef = useRef<string | null>(null);
+  const previousDashboardValuesRef = useRef<Record<string, string | null>>({});
 
   const [naverExchangeRate, setNaverExchangeRate] = useState<number>(0);
   const [usdFuturesPrice, setUsdFuturesPrice] = useState<number>(0);
@@ -127,6 +128,7 @@ export default function Home() {
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [isFlashingUpdate, setIsFlashingUpdate] = useState(false);
   const [flashStates, setFlashStates] = useState<Record<string, boolean>>({});
+  const [dashboardFlashStates, setDashboardFlashStates] = useState<Record<string, boolean>>({});
 
   const [rawHistoryData, setRawHistoryData] = useState<LineData[]>([]);
   const [selectedInterval, setSelectedInterval] = useState<IntervalKey>('1m');
@@ -290,6 +292,26 @@ const displayedHistoryData = useMemo(() => {
   const renderSortArrow = (key: typeof sortKey) => {
     if (sortKey !== key) return '↕';
     return sortOrder === 'asc' ? '▲' : '▼';
+  };
+
+  const getDashboardValueClass = (key: string, baseColorClass = 'text-white') => {
+    const isFlashing = dashboardFlashStates[key];
+
+    return [
+      'inline-block rounded-lg px-2 transition-all duration-300 whitespace-nowrap',
+      baseColorClass,
+      isFlashing ? 'bg-yellow-400/20 text-yellow-300 scale-105' : '',
+    ].join(' ');
+  };
+
+  const renderFlashDot = (key: string) => {
+    return (
+      <span
+        className={`ml-2 inline-block h-2.5 w-2.5 rounded-full bg-green-400 align-middle transition-opacity duration-300 ${
+          dashboardFlashStates[key] ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
+    );
   };
 
   const formatToEok = (value: number) => {
@@ -491,6 +513,41 @@ localization: {
       ? ((upbitUsdtTicker.trade_price / usdFuturesPrice) - 1) * 100
       : null;
 
+  const currentSpread =
+    upbitUsdtTicker && usdFuturesPrice
+      ? upbitUsdtTicker.trade_price - usdFuturesPrice
+      : null;
+
+  useEffect(() => {
+    const currentValues: Record<string, string | null> = {
+      usdFutures: usdFuturesPrice ? usdFuturesPrice.toFixed(4) : null,
+      currentUsdt: upbitUsdtTicker ? String(upbitUsdtTicker.trade_price) : null,
+      currentKimp: usdtKimp !== null ? usdtKimp.toFixed(4) : null,
+      currentSpread: currentSpread !== null ? currentSpread.toFixed(4) : null,
+      btcKimp: btcKimp !== null ? btcKimp.toFixed(4) : null,
+    };
+
+    Object.entries(currentValues).forEach(([key, value]) => {
+      const previousValue = previousDashboardValuesRef.current[key];
+
+      if (previousValue !== undefined && value !== null && previousValue !== value) {
+        setDashboardFlashStates((prev) => ({ ...prev, [key]: true }));
+
+        setTimeout(() => {
+          setDashboardFlashStates((prev) => ({ ...prev, [key]: false }));
+        }, 450);
+      }
+
+      previousDashboardValuesRef.current[key] = value;
+    });
+  }, [
+    usdFuturesPrice,
+    upbitUsdtTicker?.trade_price,
+    usdtKimp,
+    currentSpread,
+    btcKimp,
+  ]);
+
   useEffect(() => {
     if (usdtKimp === null) return;
 
@@ -572,59 +629,122 @@ localization: {
         </div>
 
         <div className="flex flex-col md:flex-row w-full max-w-6xl mx-auto justify-center items-stretch gap-4">
-          <div className="w-full md:w-[560px] flex-shrink-0">
-            <table className="w-full h-full border border-gray-700 text-xl md:text-3xl leading-none">
+          <div className="w-full md:w-[620px] flex-shrink-0">
+            <table className="w-full h-full border border-gray-700 bg-gray-800/40 text-base leading-none">
               <tbody>
                 <tr className="border-b border-gray-700">
-                  <td className="px-4 py-2">
-                    <span className="text-blue-400">
+                  <td className="px-3 md:px-4 py-3 md:py-4 align-middle">
+                    <span className="text-sm md:text-lg font-bold text-blue-400">
                       Naver USD/KRW
                     </span>
                   </td>
-                  <td className="px-4 py-2 text-right font-semibold">
-                    {naverExchangeRate ? '₩' + naverExchangeRate.toLocaleString() : 'Loading...'}
-                  </td>
-                </tr>
-
-                <tr className="border-b border-gray-700">
-                  <td className="px-4 py-2">
-                    <span className="text-blue-400">
-                      KRX USD Futures
+                  <td className="px-2 md:px-4 py-3 md:py-4 text-right align-middle font-black text-3xl md:text-5xl lg:text-6xl tracking-tight">
+                    <span className={getDashboardValueClass('naverExchange')}>
+                      {naverExchangeRate ? '₩' + naverExchangeRate.toLocaleString() : 'Loading...'}
                     </span>
                   </td>
-                  <td className="px-4 py-2 text-right font-semibold">
-                    <div>{usdFuturesPrice ? '₩' + usdFuturesPrice.toLocaleString() : 'Loading...'}</div>
+                </tr>
 
+                <tr className="border-b border-gray-700">
+                  <td className="px-3 md:px-4 py-3 md:py-4 align-middle">
+                    <span className="text-sm md:text-lg font-bold text-blue-400">
+                      Current USD Futures
+                    </span>
+                  </td>
+                  <td className="px-2 md:px-4 py-3 md:py-4 text-right align-middle font-black text-3xl md:text-5xl lg:text-6xl tracking-tight">
+                    <span className={getDashboardValueClass('usdFutures')}>
+                      {usdFuturesPrice ? '₩' + usdFuturesPrice.toLocaleString() : 'Loading...'}
+                    </span>
+                    {renderFlashDot('usdFutures')}
                   </td>
                 </tr>
 
                 <tr className="border-b border-gray-700">
-                  <td className="px-4 py-2">
+                  <td className="px-3 md:px-4 py-3 md:py-4 align-middle">
                     <a
                       href="https://upbit.com/exchange?code=CRIX.UPBIT.KRW-USDT"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-400 hover:underline"
+                      className="text-sm md:text-lg font-bold text-blue-400 hover:underline"
                     >
-                      USDT upbit
+                      Current USDT
                     </a>
                   </td>
-                  <td className="px-4 py-2 text-right font-semibold">
-                    {upbitUsdtTicker ? '₩' + upbitUsdtTicker.trade_price.toLocaleString() : 'Loading...'}
+                  <td className="px-2 md:px-4 py-3 md:py-4 text-right align-middle font-black text-3xl md:text-5xl lg:text-6xl tracking-tight">
+                    <span className={getDashboardValueClass('currentUsdt')}>
+                      {upbitUsdtTicker ? '₩' + upbitUsdtTicker.trade_price.toLocaleString() : 'Loading...'}
+                    </span>
+                    {renderFlashDot('currentUsdt')}
                   </td>
                 </tr>
 
                 <tr className="border-b border-gray-700">
-                  <td className="px-4 py-2 font-bold">BTC FX Rate</td>
-                  <td className="px-4 py-2 text-right font-semibold">
-                    {btcDivide !== null ? '₩' + btcDivide.toFixed(1) : 'Calculating...'}
+                  <td className="px-3 md:px-4 py-3 md:py-4 align-middle">
+                    <span className="text-sm md:text-lg font-bold text-blue-400">
+                      Current Kimp
+                    </span>
+                  </td>
+                  <td className="px-2 md:px-4 py-3 md:py-4 text-right align-middle font-black text-3xl md:text-5xl lg:text-6xl tracking-tight">
+                    <span
+                      className={getDashboardValueClass(
+                        'currentKimp',
+                        usdtKimp !== null ? (usdtKimp >= 0 ? 'text-red-500' : 'text-blue-500') : 'text-gray-400'
+                      )}
+                    >
+                      {usdtKimp !== null ? usdtKimp.toFixed(3) + '%' : '계산 중...'}
+                    </span>
+                    {renderFlashDot('currentKimp')}
+                  </td>
+                </tr>
+
+                <tr className="border-b border-gray-700">
+                  <td className="px-3 md:px-4 py-3 md:py-4 align-middle">
+                    <span className="text-sm md:text-lg font-bold text-blue-400">
+                      Current Spread
+                    </span>
+                  </td>
+                  <td className="px-2 md:px-4 py-3 md:py-4 text-right align-middle font-black text-3xl md:text-5xl lg:text-6xl tracking-tight">
+                    <span
+                      className={getDashboardValueClass(
+                        'currentSpread',
+                        currentSpread !== null ? (currentSpread >= 0 ? 'text-red-500' : 'text-blue-500') : 'text-gray-400'
+                      )}
+                    >
+                      {currentSpread !== null ? currentSpread.toFixed(2) + '원' : '계산 중...'}
+                    </span>
+                    {renderFlashDot('currentSpread')}
+                  </td>
+                </tr>
+
+                <tr className="border-b border-gray-700">
+                  <td className="px-3 md:px-4 py-3 md:py-4 align-middle">
+                    <span className="text-sm md:text-lg font-bold text-gray-300">
+                      BTC FX Rate
+                    </span>
+                  </td>
+                  <td className="px-2 md:px-4 py-3 md:py-4 text-right align-middle font-black text-2xl md:text-4xl lg:text-5xl tracking-tight">
+                    <span className={getDashboardValueClass('btcDivide')}>
+                      {btcDivide !== null ? '₩' + btcDivide.toFixed(1) : 'Calculating...'}
+                    </span>
                   </td>
                 </tr>
 
                 <tr>
-                  <td className="px-4 py-2 font-bold"> BTC kimp</td>
-                  <td className={`px-4 py-2 text-right font-bold ${btcKimp !== null ? (btcKimp >= 0 ? 'text-red-500' : 'text-blue-500') : ''}`}>
-                    {btcKimp !== null ? btcKimp.toFixed(2) + '%' : '계산 중...'}
+                  <td className="px-3 md:px-4 py-3 md:py-4 align-middle">
+                    <span className="text-sm md:text-lg font-bold text-gray-300">
+                      BTC kimp
+                    </span>
+                  </td>
+                  <td className="px-2 md:px-4 py-3 md:py-4 text-right align-middle font-black text-2xl md:text-4xl lg:text-5xl tracking-tight">
+                    <span
+                      className={getDashboardValueClass(
+                        'btcKimp',
+                        btcKimp !== null ? (btcKimp >= 0 ? 'text-red-500' : 'text-blue-500') : 'text-gray-400'
+                      )}
+                    >
+                      {btcKimp !== null ? btcKimp.toFixed(2) + '%' : '계산 중...'}
+                    </span>
+                    {renderFlashDot('btcKimp')}
                   </td>
                 </tr>
               </tbody>
@@ -684,8 +804,16 @@ localization: {
 
             <div className="text-right shrink-0 w-full md:w-[240px] overflow-hidden">
               <div className="text-base md:text-lg text-gray-400"> USDT kimp</div>
-              <div className={`text-4xl md:text-5xl font-bold whitespace-nowrap leading-tight ${usdtKimp !== null ? (usdtKimp >= 0 ? 'text-red-500' : 'text-blue-500') : 'text-gray-400'}`}>
-                {usdtKimp !== null ? usdtKimp.toFixed(3) + '%' : '계산 중...'}
+              <div className="text-4xl md:text-6xl font-black whitespace-nowrap leading-tight">
+                <span
+                  className={getDashboardValueClass(
+                    'currentKimp',
+                    usdtKimp !== null ? (usdtKimp >= 0 ? 'text-red-500' : 'text-blue-500') : 'text-gray-400'
+                  )}
+                >
+                  {usdtKimp !== null ? usdtKimp.toFixed(3) + '%' : '계산 중...'}
+                </span>
+                {renderFlashDot('currentKimp')}
               </div>
               <div className="text-xs text-gray-500 mt-1">
                 {intervalLabels[selectedInterval]} 차트 {displayedHistoryData.length}개
