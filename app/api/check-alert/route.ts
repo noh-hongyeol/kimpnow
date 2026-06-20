@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 async function sendTelegram(text: string) {
@@ -25,12 +25,16 @@ async function sendTelegram(text: string) {
   return res.json();
 }
 async function writeHeartbeat(status: string, message: string) {
-  await supabase.from('system_heartbeats').upsert({
+  const { error } = await supabase.from('system_heartbeats').upsert({
     id: 'check_alert',
     status,
     message,
     updated_at: new Date().toISOString(),
   });
+
+  if (error) {
+    console.error('heartbeat error:', error.message);
+  }
 }
 export async function GET() {
   try {
