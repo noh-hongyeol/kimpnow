@@ -657,7 +657,7 @@ const totalBoxStyle: React.CSSProperties = {
 };
 
 const bigValueStyle: React.CSSProperties = {
-  fontSize: 40,
+  fontSize: 50,
   fontWeight: 900,
   color: 'white',
   lineHeight: 1.1,
