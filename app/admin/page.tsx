@@ -9,6 +9,12 @@ type StatusItem = {
   level: 'green' | 'yellow' | 'red' | 'none' | 'closed';
 };
 
+type EntryBox = {
+  usd: string;
+  contracts: string;
+  usdt: string;
+};
+
 export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [loggedIn, setLoggedIn] = useState(false);
@@ -19,13 +25,11 @@ export default function AdminPage() {
   const [alertIntervalSec, setAlertIntervalSec] = useState('60');
   const [cooldownMinutes, setCooldownMinutes] = useState('60');
 
-  const [entryUsd1, setEntryUsd1] = useState('1528.6');
-  const [contractCount1, setContractCount1] = useState('10');
-  const [entryUsdt1, setEntryUsdt1] = useState('1507');
-
-  const [entryUsd2, setEntryUsd2] = useState('');
-  const [contractCount2, setContractCount2] = useState('');
-  const [entryUsdt2, setEntryUsdt2] = useState('');
+  const [entries, setEntries] = useState<EntryBox[]>([
+    { usd: '1528.6', contracts: '10', usdt: '1507' },
+    { usd: '', contracts: '', usdt: '' },
+    { usd: '', contracts: '', usdt: '' },
+  ]);
 
   const [currentUsd, setCurrentUsd] = useState<number | null>(null);
   const [currentUsdt, setCurrentUsdt] = useState<number | null>(null);
@@ -33,35 +37,52 @@ export default function AdminPage() {
   const [message, setMessage] = useState('');
   const [statusItems, setStatusItems] = useState<StatusItem[]>([]);
 
-  const eUsd1 = Number(entryUsd1);
-  const c1 = Number(contractCount1);
-  const eUsdt1 = Number(entryUsdt1);
+  const parsedEntries = entries.map((e) => {
+    const usd = Number(e.usd);
+    const contracts = Number(e.contracts);
+    const usdt = Number(e.usdt);
 
-  const eUsd2 = Number(entryUsd2);
-  const c2 = Number(contractCount2);
-  const eUsdt2 = Number(entryUsdt2);
+    return {
+      usd,
+      contracts,
+      usdt,
+      valid: usd > 0 && contracts > 0 && usdt > 0,
+    };
+  });
 
-  const valid1 = eUsd1 > 0 && c1 > 0 && eUsdt1 > 0;
-  const valid2 = eUsd2 > 0 && c2 > 0 && eUsdt2 > 0;
+  const totalContracts = parsedEntries.reduce(
+    (sum, e) => sum + (e.valid ? e.contracts : 0),
+    0
+  );
 
-  const totalContracts = (valid1 ? c1 : 0) + (valid2 ? c2 : 0);
   const totalUsdtAmount = totalContracts * 10000;
 
   const avgUsdEntry =
     totalContracts > 0
-      ? ((valid1 ? eUsd1 * c1 : 0) + (valid2 ? eUsd2 * c2 : 0)) / totalContracts
+      ? parsedEntries.reduce(
+          (sum, e) => sum + (e.valid ? e.usd * e.contracts : 0),
+          0
+        ) / totalContracts
       : 0;
 
   const avgUsdtEntry =
     totalUsdtAmount > 0
-      ? ((valid1 ? eUsdt1 * c1 * 10000 : 0) + (valid2 ? eUsdt2 * c2 * 10000 : 0)) / totalUsdtAmount
+      ? parsedEntries.reduce(
+          (sum, e) => sum + (e.valid ? e.usdt * e.contracts * 10000 : 0),
+          0
+        ) / totalUsdtAmount
       : 0;
 
-  const entryKimp = avgUsdEntry > 0 ? ((avgUsdtEntry / avgUsdEntry) - 1) * 100 : 0;
-  const currentKimp = currentUsd && currentUsdt ? ((currentUsdt / currentUsd) - 1) * 100 : null;
+  const entryKimp =
+    avgUsdEntry > 0 ? ((avgUsdtEntry / avgUsdEntry) - 1) * 100 : 0;
+
+  const currentKimp =
+    currentUsd && currentUsdt ? ((currentUsdt / currentUsd) - 1) * 100 : null;
 
   const entrySpread = avgUsdEntry - avgUsdtEntry;
-  const currentSpread = currentUsd && currentUsdt ? currentUsd - currentUsdt : null;
+
+  const currentSpread =
+    currentUsd && currentUsdt ? currentUsd - currentUsdt : null;
 
   const futuresPnl =
     currentUsd && avgUsdEntry && totalContracts
@@ -81,34 +102,49 @@ export default function AdminPage() {
   const netPnl = grossPnl - totalFee;
 
   useEffect(() => {
-    const saved = localStorage.getItem('kimpnow_position_v2');
+    const saved =
+      localStorage.getItem('kimpnow_position_v3') ||
+      localStorage.getItem('kimpnow_position_v2');
 
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed.entryUsd1) setEntryUsd1(String(parsed.entryUsd1));
-        if (parsed.contractCount1) setContractCount1(String(parsed.contractCount1));
-        if (parsed.entryUsdt1) setEntryUsdt1(String(parsed.entryUsdt1));
-        if (parsed.entryUsd2 !== undefined) setEntryUsd2(String(parsed.entryUsd2));
-        if (parsed.contractCount2 !== undefined) setContractCount2(String(parsed.contractCount2));
-        if (parsed.entryUsdt2 !== undefined) setEntryUsdt2(String(parsed.entryUsdt2));
+
+        if (Array.isArray(parsed.entries)) {
+          setEntries(parsed.entries);
+        } else {
+          setEntries([
+            {
+              usd: String(parsed.entryUsd1 ?? '1528.6'),
+              contracts: String(parsed.contractCount1 ?? '10'),
+              usdt: String(parsed.entryUsdt1 ?? '1507'),
+            },
+            {
+              usd: String(parsed.entryUsd2 ?? ''),
+              contracts: String(parsed.contractCount2 ?? ''),
+              usdt: String(parsed.entryUsdt2 ?? ''),
+            },
+            { usd: '', contracts: '', usdt: '' },
+          ]);
+        }
       } catch {}
     }
   }, []);
 
   useEffect(() => {
     localStorage.setItem(
-      'kimpnow_position_v2',
-      JSON.stringify({
-        entryUsd1,
-        contractCount1,
-        entryUsdt1,
-        entryUsd2,
-        contractCount2,
-        entryUsdt2,
-      })
+      'kimpnow_position_v3',
+      JSON.stringify({ entries })
     );
-  }, [entryUsd1, contractCount1, entryUsdt1, entryUsd2, contractCount2, entryUsdt2]);
+  }, [entries]);
+
+  function updateEntry(index: number, key: keyof EntryBox, value: string) {
+    setEntries((prev) =>
+      prev.map((entry, i) =>
+        i === index ? { ...entry, [key]: value } : entry
+      )
+    );
+  }
 
   async function loadSettings() {
     const res = await fetch('/api/admin/settings');
@@ -133,7 +169,9 @@ export default function AdminPage() {
     const exchangeRes = await fetch('/api/exchange', { cache: 'no-store' });
     const exchangeData = await exchangeRes.json();
 
-    const upbitRes = await fetch('https://api.upbit.com/v1/ticker?markets=KRW-USDT');
+    const upbitRes = await fetch(
+      'https://api.upbit.com/v1/ticker?markets=KRW-USDT'
+    );
     const upbitData = await upbitRes.json();
 
     setCurrentUsd(Number(exchangeData.rate));
@@ -208,7 +246,15 @@ export default function AdminPage() {
           <h1 style={{ fontSize: 28, marginBottom: 20 }}>Kimpnow Admin</h1>
 
           <label>Admin Password</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} style={inputStyle} onKeyDown={(e) => { if (e.key === 'Enter') login(); }} />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={inputStyle}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') login();
+            }}
+          />
 
           <button onClick={login} style={buttonStyle}>Login</button>
 
@@ -217,22 +263,22 @@ export default function AdminPage() {
       ) : (
         <div style={dashboardStyle}>
           <div style={adminCardStyle}>
-            <h1 style={{ fontSize: 26, marginBottom: 20 }}>Kimpnow Admin</h1>
+            <h1 style={{ fontSize: 22, marginBottom: 18 }}>Kimpnow Admin</h1>
 
             <label>Upper Alert (%)</label>
-            <input value={upperKimp} onChange={(e) => setUpperKimp(e.target.value)} style={inputStyle} />
+            <input value={upperKimp} onChange={(e) => setUpperKimp(e.target.value)} style={smallInputStyle} />
 
             <label>Lower Alert (%)</label>
-            <input value={lowerKimp} onChange={(e) => setLowerKimp(e.target.value)} style={inputStyle} />
+            <input value={lowerKimp} onChange={(e) => setLowerKimp(e.target.value)} style={smallInputStyle} />
 
             <label>Max Count</label>
-            <input value={maxAlertCount} onChange={(e) => setMaxAlertCount(e.target.value)} style={inputStyle} />
+            <input value={maxAlertCount} onChange={(e) => setMaxAlertCount(e.target.value)} style={smallInputStyle} />
 
             <label>Interval Sec</label>
-            <input value={alertIntervalSec} onChange={(e) => setAlertIntervalSec(e.target.value)} style={inputStyle} />
+            <input value={alertIntervalSec} onChange={(e) => setAlertIntervalSec(e.target.value)} style={smallInputStyle} />
 
             <label>Cooldown Min</label>
-            <input value={cooldownMinutes} onChange={(e) => setCooldownMinutes(e.target.value)} style={inputStyle} />
+            <input value={cooldownMinutes} onChange={(e) => setCooldownMinutes(e.target.value)} style={smallInputStyle} />
 
             <button onClick={saveSettings} style={buttonStyle}>Save</button>
 
@@ -240,62 +286,72 @@ export default function AdminPage() {
           </div>
 
           <div style={positionCardStyle}>
-            <h2 style={{ fontSize: 24, marginBottom: 14 }}>Position Calculator</h2>
+            <h2 style={{ fontSize: 28, marginBottom: 16 }}>Position Calculator</h2>
 
             <div style={totalBoxStyle}>
               <div style={{ color: '#94a3b8', fontSize: 14 }}>Net PnL</div>
-              <div style={{ fontSize: 32, fontWeight: 900, color: netPnl >= 0 ? '#22c55e' : '#ef4444' }}>
-                ₩{netPnl.toLocaleString()}
-              </div>
+              <div style={bigValueStyle}>₩{netPnl.toLocaleString()}</div>
 
               <div style={summaryGridStyle}>
                 <Info label="Entry Kimp" value={`${entryKimp.toFixed(3)}%`} />
                 <Info label="Current Kimp" value={currentKimp !== null ? `${currentKimp.toFixed(3)}%` : 'Loading'} />
+
                 <Info label="Entry Spread" value={`₩${entrySpread.toFixed(1)}`} />
                 <Info label="Current Spread" value={currentSpread !== null ? `₩${currentSpread.toFixed(1)}` : 'Loading'} />
+
                 <Info label="Avg USD Entry" value={`₩${avgUsdEntry.toFixed(1)}`} />
                 <Info label="Avg USDT Entry" value={`₩${avgUsdtEntry.toFixed(1)}`} />
+
                 <Info label="Current USD Futures" value={currentUsd ? `₩${currentUsd.toLocaleString()}` : 'Loading'} />
                 <Info label="Current USDT" value={currentUsdt ? `₩${currentUsdt.toLocaleString()}` : 'Loading'} />
+
                 <Info label="Futures PnL" value={`₩${futuresPnl.toLocaleString()}`} />
                 <Info label="USDT PnL" value={`₩${usdtPnl.toLocaleString()}`} />
+
                 <Info label="Gross PnL" value={`₩${grossPnl.toLocaleString()}`} />
                 <Info label="Total Fee" value={`-₩${totalFee.toLocaleString()}`} />
               </div>
             </div>
 
             <div style={entryGridStyle}>
-              <div style={entryBoxStyle}>
-                <h3 style={entryTitleStyle}>Entry 1</h3>
+              {entries.map((entry, index) => {
+                const contracts = Number(entry.contracts);
+                const validAmount = contracts > 0 ? contracts * 10000 : 0;
 
-                <label>USD Futures Short</label>
-                <input value={entryUsd1} onChange={(e) => setEntryUsd1(e.target.value)} style={inputStyle} />
+                return (
+                  <div key={index} style={entryBoxStyle}>
+                    <h3 style={entryTitleStyle}>Entry {index + 1}</h3>
 
-                <label>Contract Count</label>
-                <input value={contractCount1} onChange={(e) => setContractCount1(e.target.value)} style={inputStyle} />
+                    <label>USD Futures Short</label>
+                    <input
+                      value={entry.usd}
+                      onChange={(e) => updateEntry(index, 'usd', e.target.value)}
+                      style={entryInputStyle}
+                    />
 
-                <label>USDT Long</label>
-                <input value={entryUsdt1} onChange={(e) => setEntryUsdt1(e.target.value)} style={inputStyle} />
+                    <label>Contract Count</label>
+                    <input
+                      value={entry.contracts}
+                      onChange={(e) => updateEntry(index, 'contracts', e.target.value)}
+                      style={entryInputStyle}
+                    />
 
-                <label>USDT Amount</label>
-                <input value={valid1 ? (c1 * 10000).toLocaleString() : '0'} readOnly style={inputStyle} />
-              </div>
+                    <label>USDT Long</label>
+                    <input
+                      value={entry.usdt}
+                      onChange={(e) => updateEntry(index, 'usdt', e.target.value)}
+                      style={entryInputStyle}
+                    />
 
-              <div style={entryBoxStyle}>
-                <h3 style={entryTitleStyle}>Entry 2</h3>
-
-                <label>USD Futures Short</label>
-                <input value={entryUsd2} onChange={(e) => setEntryUsd2(e.target.value)} style={inputStyle} />
-
-                <label>Contract Count</label>
-                <input value={contractCount2} onChange={(e) => setContractCount2(e.target.value)} style={inputStyle} />
-
-                <label>USDT Long</label>
-                <input value={entryUsdt2} onChange={(e) => setEntryUsdt2(e.target.value)} style={inputStyle} />
-
-                <label>USDT Amount</label>
-                <input value={valid2 ? (c2 * 10000).toLocaleString() : '0'} readOnly style={inputStyle} />
-              </div>
+                    <label>USDT Amount</label>
+                    <input
+                      value={validAmount.toLocaleString()}
+                      readOnly
+                      style={entryInputStyle}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -307,8 +363,8 @@ export default function AdminPage() {
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div style={infoRowStyle}>
-      <span style={{ color: '#cbd5e1' }}>{label}</span>
-      <span style={{ fontWeight: 900 }}>{value}</span>
+      <div style={infoLabelStyle}>{label}</div>
+      <div style={bigValueStyle}>{value}</div>
     </div>
   );
 }
@@ -351,7 +407,7 @@ const mainStyle: React.CSSProperties = {
 
 const dashboardStyle: React.CSSProperties = {
   display: 'flex',
-  gap: 24,
+  gap: 18,
   justifyContent: 'center',
   alignItems: 'flex-start',
   flexWrap: 'wrap',
@@ -367,15 +423,15 @@ const loginCardStyle: React.CSSProperties = {
 };
 
 const adminCardStyle: React.CSSProperties = {
-  width: 270,
+  width: 220,
   background: '#111827',
   border: '1px solid #334155',
   borderRadius: 16,
-  padding: 20,
+  padding: 18,
 };
 
 const positionCardStyle: React.CSSProperties = {
-  width: 660,
+  width: 960,
   background: '#111827',
   border: '1px solid #334155',
   borderRadius: 16,
@@ -421,6 +477,19 @@ const inputStyle: React.CSSProperties = {
   fontSize: 16,
 };
 
+const smallInputStyle: React.CSSProperties = {
+  ...inputStyle,
+  padding: '10px',
+  marginBottom: 13,
+};
+
+const entryInputStyle: React.CSSProperties = {
+  ...inputStyle,
+  padding: '9px',
+  marginBottom: 10,
+  fontSize: 15,
+};
+
 const buttonStyle: React.CSSProperties = {
   width: '100%',
   padding: '13px',
@@ -441,27 +510,40 @@ const totalBoxStyle: React.CSSProperties = {
   border: '1px solid #334155',
 };
 
+const bigValueStyle: React.CSSProperties = {
+  fontSize: 32,
+  fontWeight: 900,
+  color: 'white',
+  lineHeight: 1.15,
+  whiteSpace: 'nowrap',
+};
+
 const summaryGridStyle: React.CSSProperties = {
-  marginTop: 12,
-  paddingTop: 12,
+  marginTop: 16,
+  paddingTop: 16,
   borderTop: '1px solid #334155',
   display: 'grid',
   gridTemplateColumns: '1fr 1fr',
-  gap: '10px 18px',
-  fontSize: 20,
+  gap: '16px 34px',
 };
 
 const infoRowStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
-  gap: 10,
+  alignItems: 'baseline',
+  gap: 16,
   whiteSpace: 'nowrap',
+};
+
+const infoLabelStyle: React.CSSProperties = {
+  color: '#cbd5e1',
+  fontSize: 18,
 };
 
 const entryGridStyle: React.CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: '1fr 1fr',
-  gap: 16,
+  gridTemplateColumns: '1fr 1fr 1fr',
+  gap: 14,
 };
 
 const entryBoxStyle: React.CSSProperties = {
