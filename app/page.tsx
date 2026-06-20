@@ -692,7 +692,7 @@ localization: {
               ].map((item) => (
                 <div
                   key={item.key}
-                  className="grid grid-cols-[minmax(128px,42%)_1fr] md:grid-cols-[250px_1fr] lg:grid-cols-[270px_1fr] items-center min-h-[42px] md:min-h-[50px] border-b border-gray-700 last:border-b-0"
+                  className="grid grid-cols-[minmax(150px,auto)_1fr] md:grid-cols-[270px_1fr] lg:grid-cols-[280px_1fr] items-center min-h-[42px] md:min-h-[50px] border-b border-gray-700 last:border-b-0"
                 >
                   <div className={`text-[17px] md:text-[22px] lg:text-[24px] font-extrabold leading-none whitespace-nowrap ${item.labelColor}`}>
                     {item.link ? (
@@ -709,9 +709,9 @@ localization: {
                     )}
                   </div>
 
-                  <div className="flex items-center justify-end min-w-0">
+                  <div className="flex items-center justify-start min-w-0">
                     <span
-                      className={`${getDashboardValueClass(item.key, item.color)} block min-w-[145px] md:min-w-[220px] lg:min-w-[240px] text-right text-[30px] md:text-[38px] lg:text-[42px] leading-none font-black tracking-tight tabular-nums`}
+                      className={`${getDashboardValueClass(item.key, item.color)} block text-left text-[30px] md:text-[38px] lg:text-[42px] leading-none font-black tracking-tight tabular-nums`}
                     >
                       {item.value}
                     </span>
