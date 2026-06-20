@@ -262,34 +262,11 @@ export default function AdminPage() {
         </div>
       ) : (
         <div style={dashboardStyle}>
-          <div style={adminCardStyle}>
-            <h1 style={{ fontSize: 22, marginBottom: 18 }}>Kimpnow Admin</h1>
-
-            <label>Upper Alert (%)</label>
-            <input value={upperKimp} onChange={(e) => setUpperKimp(e.target.value)} style={smallInputStyle} />
-
-            <label>Lower Alert (%)</label>
-            <input value={lowerKimp} onChange={(e) => setLowerKimp(e.target.value)} style={smallInputStyle} />
-
-            <label>Max Count</label>
-            <input value={maxAlertCount} onChange={(e) => setMaxAlertCount(e.target.value)} style={smallInputStyle} />
-
-            <label>Interval Sec</label>
-            <input value={alertIntervalSec} onChange={(e) => setAlertIntervalSec(e.target.value)} style={smallInputStyle} />
-
-            <label>Cooldown Min</label>
-            <input value={cooldownMinutes} onChange={(e) => setCooldownMinutes(e.target.value)} style={smallInputStyle} />
-
-            <button onClick={saveSettings} style={buttonStyle}>Save</button>
-
-            {message && <p style={{ marginTop: 16, color: '#38bdf8' }}>{message}</p>}
-          </div>
-
           <div style={positionCardStyle}>
-            <h2 style={{ fontSize: 28, marginBottom: 16 }}>Position Calculator</h2>
+            <h2 style={{ fontSize: 26, marginBottom: 14 }}>Position Calculator</h2>
 
             <div style={totalBoxStyle}>
-              <div style={{ color: '#94a3b8', fontSize: 14 }}>Net PnL</div>
+              <div style={{ color: '#94a3b8', fontSize: 13 }}>Net PnL</div>
               <div style={bigValueStyle}>₩{netPnl.toLocaleString()}</div>
 
               <div style={summaryGridStyle}>
@@ -354,6 +331,29 @@ export default function AdminPage() {
               })}
             </div>
           </div>
+
+          <div style={adminCardStyle}>
+            <h1 style={{ fontSize: 20, marginBottom: 16 }}>Kimpnow Admin</h1>
+
+            <label>Upper Alert (%)</label>
+            <input value={upperKimp} onChange={(e) => setUpperKimp(e.target.value)} style={smallInputStyle} />
+
+            <label>Lower Alert (%)</label>
+            <input value={lowerKimp} onChange={(e) => setLowerKimp(e.target.value)} style={smallInputStyle} />
+
+            <label>Max Count</label>
+            <input value={maxAlertCount} onChange={(e) => setMaxAlertCount(e.target.value)} style={smallInputStyle} />
+
+            <label>Interval Sec</label>
+            <input value={alertIntervalSec} onChange={(e) => setAlertIntervalSec(e.target.value)} style={smallInputStyle} />
+
+            <label>Cooldown Min</label>
+            <input value={cooldownMinutes} onChange={(e) => setCooldownMinutes(e.target.value)} style={smallInputStyle} />
+
+            <button onClick={saveSettings} style={buttonStyle}>Save</button>
+
+            {message && <p style={{ marginTop: 16, color: '#38bdf8' }}>{message}</p>}
+          </div>
         </div>
       )}
     </main>
@@ -401,13 +401,13 @@ const mainStyle: React.CSSProperties = {
   minHeight: '100vh',
   background: '#050816',
   color: 'white',
-  padding: '30px 20px',
+  padding: '22px 12px',
   fontFamily: 'Arial, sans-serif',
 };
 
 const dashboardStyle: React.CSSProperties = {
   display: 'flex',
-  gap: 18,
+  gap: 12,
   justifyContent: 'center',
   alignItems: 'flex-start',
   flexWrap: 'wrap',
@@ -423,32 +423,34 @@ const loginCardStyle: React.CSSProperties = {
 };
 
 const adminCardStyle: React.CSSProperties = {
-  width: 220,
+  width: 185,
+  background: '#111827',
+  border: '1px solid #334155',
+  borderRadius: 16,
+  padding: 14,
+  order: 2,
+};
+
+const positionCardStyle: React.CSSProperties = {
+  width: 720,
   background: '#111827',
   border: '1px solid #334155',
   borderRadius: 16,
   padding: 18,
-};
-
-const positionCardStyle: React.CSSProperties = {
-  width: 960,
-  background: '#111827',
-  border: '1px solid #334155',
-  borderRadius: 16,
-  padding: 24,
+  order: 1,
 };
 
 const statusPanelStyle: React.CSSProperties = {
   position: 'fixed',
-  top: 16,
-  right: 16,
-  width: 230,
+  top: 8,
+  right: 8,
+  width: 210,
   background: '#020617',
   border: '1px solid #334155',
   borderRadius: 12,
-  padding: 12,
+  padding: 10,
   zIndex: 9999,
-  fontSize: 13,
+  fontSize: 12,
 };
 
 const statusTitleStyle: React.CSSProperties = {
@@ -467,93 +469,95 @@ const statusRowStyle: React.CSSProperties = {
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
-  padding: '11px',
-  marginTop: 7,
-  marginBottom: 14,
-  borderRadius: 10,
+  padding: '10px',
+  marginTop: 6,
+  marginBottom: 12,
+  borderRadius: 9,
   border: '1px solid #475569',
   background: '#020617',
   color: 'white',
-  fontSize: 16,
+  fontSize: 15,
 };
 
 const smallInputStyle: React.CSSProperties = {
   ...inputStyle,
-  padding: '10px',
-  marginBottom: 13,
+  padding: '9px',
+  marginBottom: 11,
+  fontSize: 14,
 };
 
 const entryInputStyle: React.CSSProperties = {
   ...inputStyle,
-  padding: '9px',
-  marginBottom: 10,
-  fontSize: 15,
+  padding: '7px',
+  marginTop: 5,
+  marginBottom: 8,
+  fontSize: 13,
 };
 
 const buttonStyle: React.CSSProperties = {
   width: '100%',
-  padding: '13px',
+  padding: '12px',
   borderRadius: 10,
   border: 'none',
   background: '#2563eb',
   color: 'white',
-  fontSize: 16,
+  fontSize: 15,
   fontWeight: 700,
   cursor: 'pointer',
 };
 
 const totalBoxStyle: React.CSSProperties = {
-  marginBottom: 18,
-  padding: 16,
+  marginBottom: 14,
+  padding: 14,
   borderRadius: 12,
   background: '#020617',
   border: '1px solid #334155',
 };
 
 const bigValueStyle: React.CSSProperties = {
-  fontSize: 32,
+  fontSize: 25,
   fontWeight: 900,
   color: 'white',
-  lineHeight: 1.15,
+  lineHeight: 1.1,
   whiteSpace: 'nowrap',
 };
 
 const summaryGridStyle: React.CSSProperties = {
-  marginTop: 16,
-  paddingTop: 16,
+  marginTop: 14,
+  paddingTop: 14,
   borderTop: '1px solid #334155',
   display: 'grid',
   gridTemplateColumns: '1fr 1fr',
-  gap: '16px 34px',
+  gap: '11px 24px',
 };
 
 const infoRowStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'baseline',
-  gap: 16,
+  gap: 12,
   whiteSpace: 'nowrap',
 };
 
 const infoLabelStyle: React.CSSProperties = {
   color: '#cbd5e1',
-  fontSize: 18,
+  fontSize: 14,
 };
 
 const entryGridStyle: React.CSSProperties = {
   display: 'grid',
   gridTemplateColumns: '1fr 1fr 1fr',
-  gap: 14,
+  gap: 10,
 };
 
 const entryBoxStyle: React.CSSProperties = {
   border: '1px solid #334155',
   borderRadius: 12,
-  padding: 14,
+  padding: 10,
   background: '#0b1020',
 };
 
 const entryTitleStyle: React.CSSProperties = {
-  fontSize: 18,
-  marginBottom: 12,
+  fontSize: 16,
+  marginBottom: 10,
 };
