@@ -23,11 +23,8 @@ function getLevel(age: number | null, greenSec: number, yellowSec: number) {
 
 function getKrxLevel(exchangeData: any) {
   if (!exchangeData) return 'none';
-
   if (!exchangeData.tradable) return 'closed';
-
   if (exchangeData.isStale) return 'red';
-
   return 'green';
 }
 
@@ -71,15 +68,13 @@ export async function GET() {
       };
     };
 
-    const krxAge = ageSeconds(exchangeData?.lastUpdatedAt);
-
     return NextResponse.json({
       success: true,
       items: [
         {
           id: 'krx_live',
           label: exchangeData?.tradable ? 'KRX LIVE' : 'KRX CLOSED',
-          age: krxAge,
+          age: ageSeconds(exchangeData?.lastUpdatedAt),
           level: getKrxLevel(exchangeData),
           updatedAt: exchangeData?.lastUpdatedAt ?? null,
           market: exchangeData?.market ?? null,
@@ -88,9 +83,6 @@ export async function GET() {
         },
         make('kimp_save', 'KIMP SAVE', kimp?.created_at, 150, 300),
         make('alert_cron', 'ALERT CRON', hb.get('check_alert')?.updated_at, 150, 300),
-        make('kis_ws', 'KIS WS', hb.get('kis_ws')?.updated_at, 90, 300),
-        make('binance_liq', 'Binance Liq', hb.get('binance_liq')?.updated_at, 120, 300),
-        make('spreadsheet', 'Spreadsheet', hb.get('spreadsheet')?.updated_at, 120, 300),
       ],
     });
   } catch (error: any) {
