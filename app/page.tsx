@@ -628,141 +628,112 @@ localization: {
           실시간 업데이트: {lastUpdated || '로딩 중...'}
         </div>
 
-        <div className="flex flex-col md:flex-row w-full max-w-6xl mx-auto justify-center items-center gap-3">
-          <div className="w-full md:w-[520px] flex-shrink-0">
-            <table className="w-full h-full border border-gray-700 bg-gray-800/40 text-base leading-tight">
-              <tbody>
-                <tr className="border-b border-gray-700">
-                  <td className="px-3 py-0.5 align-middle">
-                    <span className="text-base font-bold text-blue-400 whitespace-nowrap">
-                      Naver USD/KRW
-                    </span>
-                  </td>
-                  <td className="px-2 py-0.5 text-right align-middle font-black text-3xl tracking-tight font-mono tabular-nums">
-                    <span className={getDashboardValueClass('naverExchange')}>
-                      {naverExchangeRate ? '₩' + naverExchangeRate.toLocaleString() : 'Loading...'}
-                    </span>
-                  </td>
-                </tr>
+        <div className="flex flex-col md:flex-row w-full max-w-[1180px] mx-auto justify-center items-stretch gap-4">
+          <div className="w-full md:w-[560px] flex-shrink-0">
+            <div className="w-full h-full border border-gray-700 bg-gray-800/40 px-3 py-2">
+              {[
+                {
+                  key: 'naverExchange',
+                  label: 'Naver USD/KRW',
+                  value: naverExchangeRate ? '₩' + naverExchangeRate.toLocaleString() : 'Loading...',
+                  color: 'text-white',
+                  dot: false,
+                  labelColor: 'text-blue-400',
+                },
+                {
+                  key: 'usdFutures',
+                  label: 'Current USD Futures',
+                  value: usdFuturesPrice ? '₩' + usdFuturesPrice.toLocaleString() : 'Loading...',
+                  color: 'text-white',
+                  dot: true,
+                  labelColor: 'text-blue-400',
+                },
+                {
+                  key: 'currentUsdt',
+                  label: 'Current USDT',
+                  value: upbitUsdtTicker ? '₩' + upbitUsdtTicker.trade_price.toLocaleString() : 'Loading...',
+                  color: 'text-white',
+                  dot: true,
+                  labelColor: 'text-blue-400',
+                  link: 'https://upbit.com/exchange?code=CRIX.UPBIT.KRW-USDT',
+                },
+                {
+                  key: 'currentKimp',
+                  label: 'Current Kimp',
+                  value: usdtKimp !== null ? usdtKimp.toFixed(3) + '%' : '계산 중...',
+                  color: usdtKimp !== null ? (usdtKimp >= 0 ? 'text-red-500' : 'text-blue-500') : 'text-gray-400',
+                  dot: true,
+                  labelColor: 'text-blue-400',
+                },
+                {
+                  key: 'currentSpread',
+                  label: 'Current Spread',
+                  value: currentSpread !== null ? currentSpread.toFixed(2) + '원' : '계산 중...',
+                  color: currentSpread !== null ? (currentSpread >= 0 ? 'text-red-500' : 'text-blue-500') : 'text-gray-400',
+                  dot: true,
+                  labelColor: 'text-blue-400',
+                },
+                {
+                  key: 'btcDivide',
+                  label: 'BTC FX Rate',
+                  value: btcDivide !== null ? '₩' + btcDivide.toFixed(1) : 'Calculating...',
+                  color: 'text-white',
+                  dot: false,
+                  labelColor: 'text-gray-200',
+                },
+                {
+                  key: 'btcKimp',
+                  label: 'BTC kimp',
+                  value: btcKimp !== null ? btcKimp.toFixed(2) + '%' : '계산 중...',
+                  color: btcKimp !== null ? (btcKimp >= 0 ? 'text-red-500' : 'text-blue-500') : 'text-gray-400',
+                  dot: true,
+                  labelColor: 'text-gray-200',
+                },
+              ].map((item) => (
+                <div
+                  key={item.key}
+                  className="grid grid-cols-[220px_1fr] items-center h-[44px] border-b border-gray-700 last:border-b-0"
+                >
+                  <div className={`text-lg font-extrabold leading-none whitespace-nowrap ${item.labelColor}`}>
+                    {item.link ? (
+                      <a
+                        href={item.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline"
+                      >
+                        {item.label}
+                      </a>
+                    ) : (
+                      item.label
+                    )}
+                  </div>
 
-                <tr className="border-b border-gray-700">
-                  <td className="px-3 py-0.5 align-middle">
-                    <span className="text-base font-bold text-blue-400 whitespace-nowrap">
-                      Current USD Futures
-                    </span>
-                  </td>
-                  <td className="px-2 py-0.5 text-right align-middle font-black text-3xl tracking-tight font-mono tabular-nums">
-                    <span className={getDashboardValueClass('usdFutures')}>
-                      {usdFuturesPrice ? '₩' + usdFuturesPrice.toLocaleString() : 'Loading...'}
-                    </span>
-                    {renderFlashDot('usdFutures')}
-                  </td>
-                </tr>
-
-                <tr className="border-b border-gray-700">
-                  <td className="px-3 py-0.5 align-middle">
-                    <a
-                      href="https://upbit.com/exchange?code=CRIX.UPBIT.KRW-USDT"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-base font-bold text-blue-400 hover:underline whitespace-nowrap"
-                    >
-                      Current USDT
-                    </a>
-                  </td>
-                  <td className="px-2 py-0.5 text-right align-middle font-black text-3xl tracking-tight font-mono tabular-nums">
-                    <span className={getDashboardValueClass('currentUsdt')}>
-                      {upbitUsdtTicker ? '₩' + upbitUsdtTicker.trade_price.toLocaleString() : 'Loading...'}
-                    </span>
-                    {renderFlashDot('currentUsdt')}
-                  </td>
-                </tr>
-
-                <tr className="border-b border-gray-700">
-                  <td className="px-3 py-0.5 align-middle">
-                    <span className="text-base font-bold text-blue-400 whitespace-nowrap">
-                      Current Kimp
-                    </span>
-                  </td>
-                  <td className="px-2 py-0.5 text-right align-middle font-black text-3xl tracking-tight font-mono tabular-nums">
+                  <div className="flex items-center justify-end min-w-0">
                     <span
-                      className={getDashboardValueClass(
-                        'currentKimp',
-                        usdtKimp !== null ? (usdtKimp >= 0 ? 'text-red-500' : 'text-blue-500') : 'text-gray-400'
-                      )}
+                      className={`${getDashboardValueClass(item.key, item.color)} text-[34px] leading-none font-black tracking-tight font-mono tabular-nums text-right`}
                     >
-                      {usdtKimp !== null ? usdtKimp.toFixed(3) + '%' : '계산 중...'}
+                      {item.value}
                     </span>
-                    {renderFlashDot('currentKimp')}
-                  </td>
-                </tr>
-
-                <tr className="border-b border-gray-700">
-                  <td className="px-3 py-0.5 align-middle">
-                    <span className="text-base font-bold text-blue-400 whitespace-nowrap">
-                      Current Spread
-                    </span>
-                  </td>
-                  <td className="px-2 py-0.5 text-right align-middle font-black text-3xl tracking-tight font-mono tabular-nums">
-                    <span
-                      className={getDashboardValueClass(
-                        'currentSpread',
-                        currentSpread !== null ? (currentSpread >= 0 ? 'text-red-500' : 'text-blue-500') : 'text-gray-400'
-                      )}
-                    >
-                      {currentSpread !== null ? currentSpread.toFixed(2) + '원' : '계산 중...'}
-                    </span>
-                    {renderFlashDot('currentSpread')}
-                  </td>
-                </tr>
-
-                <tr className="border-b border-gray-700">
-                  <td className="px-3 py-0.5 align-middle">
-                    <span className="text-base font-bold text-gray-300 whitespace-nowrap">
-                      BTC FX Rate
-                    </span>
-                  </td>
-                  <td className="px-2 py-0.5 text-right align-middle font-black text-3xl tracking-tight font-mono tabular-nums">
-                    <span className={getDashboardValueClass('btcDivide')}>
-                      {btcDivide !== null ? '₩' + btcDivide.toFixed(1) : 'Calculating...'}
-                    </span>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td className="px-3 py-0.5 align-middle">
-                    <span className="text-base font-bold text-gray-300 whitespace-nowrap">
-                      BTC kimp
-                    </span>
-                  </td>
-                  <td className="px-2 py-0.5 text-right align-middle font-black text-3xl tracking-tight font-mono tabular-nums">
-                    <span
-                      className={getDashboardValueClass(
-                        'btcKimp',
-                        btcKimp !== null ? (btcKimp >= 0 ? 'text-red-500' : 'text-blue-500') : 'text-gray-400'
-                      )}
-                    >
-                      {btcKimp !== null ? btcKimp.toFixed(2) + '%' : '계산 중...'}
-                    </span>
-                    {renderFlashDot('btcKimp')}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                    {item.dot ? renderFlashDot(item.key) : <span className="ml-2 inline-block h-2.5 w-2.5" />}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="flex flex-col gap-2 justify-center items-center flex-shrink-0 w-full md:w-[520px]">
+          <div className="flex flex-col gap-2 justify-center items-stretch flex-shrink-0 w-full md:w-[560px]">
             <a href="https://accounts.binance.com/register?ref=NJ3Y7YUZ" target="_blank" rel="noopener noreferrer" className="block w-full">
-              <img src="/binance-banner2.png" alt="바이낸스 배너" className="w-full h-[118px] md:h-[140px] object-contain" />
+              <img src="/binance-banner2.png" alt="바이낸스 배너" className="w-full h-[152px] object-contain" />
             </a>
 
             <a href="https://www.bybit.com/invite?ref=OLVJA" target="_blank" rel="noopener noreferrer" className="block w-full">
-              <img src="/bybit-banner2.png" alt="바이빗 배너" className="w-full h-[118px] md:h-[140px] object-contain" />
+              <img src="/bybit-banner2.png" alt="바이빗 배너" className="w-full h-[152px] object-contain" />
             </a>
           </div>
         </div>
 
-        <div className="w-full max-w-[1120px] mx-auto bg-gray-800 border border-gray-700 rounded-xl p-3">
+        <div className="w-full max-w-[1180px] mx-auto bg-gray-800 border border-gray-700 rounded-xl p-3">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-2 mb-2">
             <div>
               <h2 className="text-xl font-bold">USDT kimp</h2>
@@ -802,9 +773,9 @@ localization: {
               </div>
             </div>
 
-            <div className="text-right shrink-0 w-full md:w-[280px] overflow-visible">
+            <div className="text-right shrink-0 w-full md:w-[300px] overflow-visible">
               <div className="text-sm md:text-base text-gray-400"> USDT kimp</div>
-              <div className="text-2xl md:text-3xl font-black whitespace-nowrap leading-tight font-mono tabular-nums">
+              <div className="text-3xl md:text-4xl font-black whitespace-nowrap leading-tight font-mono tabular-nums">
                 <span
                   className={getDashboardValueClass(
                     'currentKimp',
