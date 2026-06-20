@@ -19,7 +19,7 @@ export default function AdminPage() {
   const [alertIntervalSec, setAlertIntervalSec] = useState('60');
   const [cooldownMinutes, setCooldownMinutes] = useState('60');
 
-  const [entryUsd, setEntryUsd] = useState('1528');
+  const [entryUsd, setEntryUsd] = useState('1528.6');
   const [contractCount, setContractCount] = useState('10');
   const [entryUsdt, setEntryUsdt] = useState('1507');
   const [currentUsd, setCurrentUsd] = useState<number | null>(null);
@@ -40,6 +40,12 @@ export default function AdminPage() {
 
   const currentKimp =
     currentUsd && currentUsdt ? ((currentUsdt / currentUsd) - 1) * 100 : null;
+
+  const entrySpread =
+    entryUsdNum > 0 && entryUsdtNum > 0 ? entryUsdNum - entryUsdtNum : 0;
+
+  const currentSpread =
+    currentUsd && currentUsdt ? currentUsd - currentUsdt : null;
 
   const futuresPnl =
     currentUsd && entryUsdNum
@@ -123,7 +129,7 @@ export default function AdminPage() {
       loadSystemStatus();
       loadCurrentPrices();
     } else {
-      setMessage('비밀번호가 틀렸습니다.');
+      setMessage('Wrong password.');
     }
   }
 
@@ -143,10 +149,10 @@ export default function AdminPage() {
     const data = await res.json();
 
     if (data.success) {
-      setMessage('저장 완료');
+      setMessage('Saved');
       loadSettings();
     } else {
-      setMessage('저장 실패');
+      setMessage('Save failed');
     }
   }
 
@@ -172,9 +178,9 @@ export default function AdminPage() {
 
       {!loggedIn ? (
         <div style={loginCardStyle}>
-          <h1 style={{ fontSize: 28, marginBottom: 20 }}>Kimpnow 관리자</h1>
+          <h1 style={{ fontSize: 28, marginBottom: 20 }}>Kimpnow Admin</h1>
 
-          <label>관리자 비밀번호</label>
+          <label>Admin Password</label>
           <input
             type="password"
             value={password}
@@ -186,7 +192,7 @@ export default function AdminPage() {
           />
 
           <button onClick={login} style={buttonStyle}>
-            로그인
+            Login
           </button>
 
           {message && <p style={{ marginTop: 16, color: '#38bdf8' }}>{message}</p>}
@@ -194,60 +200,62 @@ export default function AdminPage() {
       ) : (
         <div style={dashboardStyle}>
           <div style={adminCardStyle}>
-            <h1 style={{ fontSize: 28, marginBottom: 20 }}>Kimpnow 관리자</h1>
+            <h1 style={{ fontSize: 28, marginBottom: 20 }}>Kimpnow Admin</h1>
 
-            <label>상단 알림 기준 김프 (%)</label>
+            <label>Upper Kimp Alert (%)</label>
             <input value={upperKimp} onChange={(e) => setUpperKimp(e.target.value)} style={inputStyle} />
 
-            <label>하단 알림 기준 김프 (%)</label>
+            <label>Lower Kimp Alert (%)</label>
             <input value={lowerKimp} onChange={(e) => setLowerKimp(e.target.value)} style={inputStyle} />
 
-            <label>최대 알림 횟수</label>
+            <label>Max Alert Count</label>
             <input value={maxAlertCount} onChange={(e) => setMaxAlertCount(e.target.value)} style={inputStyle} />
 
-            <label>알림 간격 초</label>
+            <label>Alert Interval Seconds</label>
             <input value={alertIntervalSec} onChange={(e) => setAlertIntervalSec(e.target.value)} style={inputStyle} />
 
-            <label>재발송 대기 분</label>
+            <label>Cooldown Minutes</label>
             <input value={cooldownMinutes} onChange={(e) => setCooldownMinutes(e.target.value)} style={inputStyle} />
 
             <button onClick={saveSettings} style={buttonStyle}>
-              설정 저장
+              Save Settings
             </button>
 
             {message && <p style={{ marginTop: 16, color: '#38bdf8' }}>{message}</p>}
           </div>
 
           <div style={positionCardStyle}>
-            <h2 style={{ fontSize: 24, marginBottom: 14 }}>포지션 계산기</h2>
+            <h2 style={{ fontSize: 24, marginBottom: 14 }}>Position Calculator</h2>
 
             <div style={totalBoxStyle}>
-              <div style={{ color: '#94a3b8', fontSize: 14 }}>총 손익</div>
+              <div style={{ color: '#94a3b8', fontSize: 14 }}>Total PnL</div>
               <div style={{ fontSize: 30, fontWeight: 900, color: totalPnl >= 0 ? '#22c55e' : '#ef4444' }}>
                 ₩{totalPnl.toLocaleString()}
               </div>
+
+              <div style={summaryGridStyle}>
+                <div>Entry Kimp: {entryKimp.toFixed(3)}%</div>
+                <div>Current Kimp: {currentKimp !== null ? currentKimp.toFixed(3) + '%' : 'Loading'}</div>
+                <div>Entry Spread: ₩{entrySpread.toFixed(1)}</div>
+                <div>Current Spread: {currentSpread !== null ? '₩' + currentSpread.toFixed(1) : 'Loading'}</div>
+                <div>Current USD Futures: {currentUsd ? '₩' + currentUsd.toLocaleString() : 'Loading'}</div>
+                <div>Current USDT: {currentUsdt ? '₩' + currentUsdt.toLocaleString() : 'Loading'}</div>
+                <div>Futures PnL: ₩{futuresPnl.toLocaleString()}</div>
+                <div>USDT PnL: ₩{usdtPnl.toLocaleString()}</div>
+              </div>
             </div>
 
-            <label>원달러 진입가 매도</label>
+            <label>USD Futures Entry Short</label>
             <input value={entryUsd} onChange={(e) => setEntryUsd(e.target.value)} style={inputStyle} />
 
-            <label>계약 수</label>
+            <label>Contract Count</label>
             <input value={contractCount} onChange={(e) => setContractCount(e.target.value)} style={inputStyle} />
 
-            <label>USDT 진입가 매수</label>
+            <label>USDT Entry Long</label>
             <input value={entryUsdt} onChange={(e) => setEntryUsdt(e.target.value)} style={inputStyle} />
 
-            <label>USDT 수량</label>
+            <label>USDT Amount</label>
             <input value={Number.isFinite(usdtAmount) ? usdtAmount.toLocaleString() : '0'} readOnly style={inputStyle} />
-
-            <div style={resultBoxStyle}>
-              <div>진입 김프: {entryKimp.toFixed(3)}%</div>
-              <div>현재 김프: {currentKimp !== null ? currentKimp.toFixed(3) + '%' : '계산 중'}</div>
-              <div>현재 원달러: {currentUsd ? '₩' + currentUsd.toLocaleString() : '계산 중'}</div>
-              <div>현재 USDT: {currentUsdt ? '₩' + currentUsdt.toLocaleString() : '계산 중'}</div>
-              <div>선물 손익: ₩{futuresPnl.toLocaleString()}</div>
-              <div>USDT 손익: ₩{usdtPnl.toLocaleString()}</div>
-            </div>
           </div>
         </div>
       )}
@@ -281,9 +289,9 @@ function levelColor(level: StatusItem['level']) {
 }
 
 function formatAge(age: number | null) {
-  if (age === null) return '없음';
-  if (age < 60) return `${age}초 전`;
-  return `${Math.floor(age / 60)}분 전`;
+  if (age === null) return 'None';
+  if (age < 60) return `${age}s`;
+  return `${Math.floor(age / 60)}m`;
 }
 
 const mainStyle: React.CSSProperties = {
@@ -386,11 +394,10 @@ const totalBoxStyle: React.CSSProperties = {
   border: '1px solid #334155',
 };
 
-const resultBoxStyle: React.CSSProperties = {
+const summaryGridStyle: React.CSSProperties = {
   marginTop: 12,
-  padding: 14,
-  borderRadius: 12,
-  background: '#020617',
-  border: '1px solid #334155',
+  paddingTop: 12,
+  borderTop: '1px solid #334155',
   lineHeight: 1.9,
+  fontSize: 15,
 };
