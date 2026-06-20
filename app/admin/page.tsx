@@ -39,9 +39,7 @@ export default function AdminPage() {
       : 0;
 
   const currentKimp =
-    currentUsd && currentUsdt
-      ? ((currentUsdt / currentUsd) - 1) * 100
-      : null;
+    currentUsd && currentUsdt ? ((currentUsdt / currentUsd) - 1) * 100 : null;
 
   const futuresPnl =
     currentUsd && entryUsdNum
@@ -54,6 +52,30 @@ export default function AdminPage() {
       : 0;
 
   const totalPnl = futuresPnl + usdtPnl;
+
+  useEffect(() => {
+    const saved = localStorage.getItem('kimpnow_position');
+
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.entryUsd) setEntryUsd(String(parsed.entryUsd));
+        if (parsed.contractCount) setContractCount(String(parsed.contractCount));
+        if (parsed.entryUsdt) setEntryUsdt(String(parsed.entryUsdt));
+      } catch {}
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      'kimpnow_position',
+      JSON.stringify({
+        entryUsd,
+        contractCount,
+        entryUsdt,
+      })
+    );
+  }, [entryUsd, contractCount, entryUsdt]);
 
   async function loadSettings() {
     const res = await fetch('/api/admin/settings');
@@ -71,10 +93,7 @@ export default function AdminPage() {
   async function loadSystemStatus() {
     const res = await fetch('/api/system-status', { cache: 'no-store' });
     const data = await res.json();
-
-    if (data.success) {
-      setStatusItems(data.items ?? []);
-    }
+    if (data.success) setStatusItems(data.items ?? []);
   }
 
   async function loadCurrentPrices() {
@@ -151,27 +170,32 @@ export default function AdminPage() {
     <main style={mainStyle}>
       {loggedIn && <SystemStatusPanel items={statusItems} />}
 
-      <div style={cardStyle}>
-        <h1 style={{ fontSize: 28, marginBottom: 20 }}>Kimpnow 관리자</h1>
+      {!loggedIn ? (
+        <div style={loginCardStyle}>
+          <h1 style={{ fontSize: 28, marginBottom: 20 }}>Kimpnow 관리자</h1>
 
-        {!loggedIn ? (
-          <>
-            <label>관리자 비밀번호</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={inputStyle}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') login();
-              }}
-            />
-            <button onClick={login} style={buttonStyle}>
-              로그인
-            </button>
-          </>
-        ) : (
-          <>
+          <label>관리자 비밀번호</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={inputStyle}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') login();
+            }}
+          />
+
+          <button onClick={login} style={buttonStyle}>
+            로그인
+          </button>
+
+          {message && <p style={{ marginTop: 16, color: '#38bdf8' }}>{message}</p>}
+        </div>
+      ) : (
+        <div style={dashboardStyle}>
+          <div style={adminCardStyle}>
+            <h1 style={{ fontSize: 28, marginBottom: 20 }}>Kimpnow 관리자</h1>
+
             <label>상단 알림 기준 김프 (%)</label>
             <input value={upperKimp} onChange={(e) => setUpperKimp(e.target.value)} style={inputStyle} />
 
@@ -191,38 +215,42 @@ export default function AdminPage() {
               설정 저장
             </button>
 
-            <div style={positionBoxStyle}>
-              <h2 style={{ fontSize: 22, marginBottom: 16 }}>포지션 계산기</h2>
+            {message && <p style={{ marginTop: 16, color: '#38bdf8' }}>{message}</p>}
+          </div>
 
-              <label>원달러 진입가 매도</label>
-              <input value={entryUsd} onChange={(e) => setEntryUsd(e.target.value)} style={inputStyle} />
+          <div style={positionCardStyle}>
+            <h2 style={{ fontSize: 24, marginBottom: 14 }}>포지션 계산기</h2>
 
-              <label>계약 수</label>
-              <input value={contractCount} onChange={(e) => setContractCount(e.target.value)} style={inputStyle} />
-
-              <label>USDT 진입가 매수</label>
-              <input value={entryUsdt} onChange={(e) => setEntryUsdt(e.target.value)} style={inputStyle} />
-
-              <label>USDT 수량</label>
-              <input value={Number.isFinite(usdtAmount) ? usdtAmount.toLocaleString() : '0'} readOnly style={inputStyle} />
-
-              <div style={resultBoxStyle}>
-                <div>진입 김프: {entryKimp.toFixed(3)}%</div>
-                <div>현재 김프: {currentKimp !== null ? currentKimp.toFixed(3) + '%' : '계산 중'}</div>
-                <div>현재 원달러: {currentUsd ? '₩' + currentUsd.toLocaleString() : '계산 중'}</div>
-                <div>현재 USDT: {currentUsdt ? '₩' + currentUsdt.toLocaleString() : '계산 중'}</div>
-                <div>선물 손익: ₩{futuresPnl.toLocaleString()}</div>
-                <div>USDT 손익: ₩{usdtPnl.toLocaleString()}</div>
-                <div style={{ fontWeight: 800, color: totalPnl >= 0 ? '#ef4444' : '#3b82f6' }}>
-                  총 손익: ₩{totalPnl.toLocaleString()}
-                </div>
+            <div style={totalBoxStyle}>
+              <div style={{ color: '#94a3b8', fontSize: 14 }}>총 손익</div>
+              <div style={{ fontSize: 30, fontWeight: 900, color: totalPnl >= 0 ? '#22c55e' : '#ef4444' }}>
+                ₩{totalPnl.toLocaleString()}
               </div>
             </div>
-          </>
-        )}
 
-        {message && <p style={{ marginTop: 16, color: '#38bdf8' }}>{message}</p>}
-      </div>
+            <label>원달러 진입가 매도</label>
+            <input value={entryUsd} onChange={(e) => setEntryUsd(e.target.value)} style={inputStyle} />
+
+            <label>계약 수</label>
+            <input value={contractCount} onChange={(e) => setContractCount(e.target.value)} style={inputStyle} />
+
+            <label>USDT 진입가 매수</label>
+            <input value={entryUsdt} onChange={(e) => setEntryUsdt(e.target.value)} style={inputStyle} />
+
+            <label>USDT 수량</label>
+            <input value={Number.isFinite(usdtAmount) ? usdtAmount.toLocaleString() : '0'} readOnly style={inputStyle} />
+
+            <div style={resultBoxStyle}>
+              <div>진입 김프: {entryKimp.toFixed(3)}%</div>
+              <div>현재 김프: {currentKimp !== null ? currentKimp.toFixed(3) + '%' : '계산 중'}</div>
+              <div>현재 원달러: {currentUsd ? '₩' + currentUsd.toLocaleString() : '계산 중'}</div>
+              <div>현재 USDT: {currentUsdt ? '₩' + currentUsdt.toLocaleString() : '계산 중'}</div>
+              <div>선물 손익: ₩{futuresPnl.toLocaleString()}</div>
+              <div>USDT 손익: ₩{usdtPnl.toLocaleString()}</div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
@@ -231,7 +259,6 @@ function SystemStatusPanel({ items }: { items: StatusItem[] }) {
   return (
     <div style={statusPanelStyle}>
       <div style={statusTitleStyle}>SYSTEM</div>
-
       {items.map((item) => (
         <div key={item.id} style={statusRowStyle}>
           <span>
@@ -267,9 +294,33 @@ const mainStyle: React.CSSProperties = {
   fontFamily: 'Arial, sans-serif',
 };
 
-const cardStyle: React.CSSProperties = {
+const dashboardStyle: React.CSSProperties = {
+  display: 'flex',
+  gap: 24,
+  justifyContent: 'center',
+  alignItems: 'flex-start',
+  flexWrap: 'wrap',
+};
+
+const loginCardStyle: React.CSSProperties = {
   maxWidth: 480,
   margin: '0 auto',
+  background: '#111827',
+  border: '1px solid #334155',
+  borderRadius: 16,
+  padding: 24,
+};
+
+const adminCardStyle: React.CSSProperties = {
+  width: 480,
+  background: '#111827',
+  border: '1px solid #334155',
+  borderRadius: 16,
+  padding: 24,
+};
+
+const positionCardStyle: React.CSSProperties = {
+  width: 420,
   background: '#111827',
   border: '1px solid #334155',
   borderRadius: 16,
@@ -287,14 +338,12 @@ const statusPanelStyle: React.CSSProperties = {
   padding: 12,
   zIndex: 9999,
   fontSize: 13,
-  boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
 };
 
 const statusTitleStyle: React.CSSProperties = {
   fontWeight: 800,
   color: '#38bdf8',
   marginBottom: 8,
-  letterSpacing: 0.5,
 };
 
 const statusRowStyle: React.CSSProperties = {
@@ -329,10 +378,12 @@ const buttonStyle: React.CSSProperties = {
   cursor: 'pointer',
 };
 
-const positionBoxStyle: React.CSSProperties = {
-  marginTop: 28,
-  paddingTop: 24,
-  borderTop: '1px solid #334155',
+const totalBoxStyle: React.CSSProperties = {
+  marginBottom: 18,
+  padding: 16,
+  borderRadius: 12,
+  background: '#020617',
+  border: '1px solid #334155',
 };
 
 const resultBoxStyle: React.CSSProperties = {
