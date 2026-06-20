@@ -300,14 +300,14 @@ const displayedHistoryData = useMemo(() => {
     return [
       'inline-block rounded-lg px-2 transition-all duration-300 whitespace-nowrap',
       baseColorClass,
-      isFlashing ? 'bg-yellow-400/20 text-yellow-300 scale-105' : '',
+      isFlashing ? 'bg-yellow-400/20 text-yellow-300' : '',
     ].join(' ');
   };
 
   const renderFlashDot = (key: string) => {
     return (
       <span
-        className={`ml-2 inline-block h-2.5 w-2.5 rounded-full bg-green-400 align-middle transition-opacity duration-300 ${
+        className={`ml-2 inline-block h-2 w-2 rounded-full bg-green-400 align-middle transition-opacity duration-300 ${
           dashboardFlashStates[key] ? 'opacity-100' : 'opacity-0'
         }`}
       />
@@ -623,22 +623,22 @@ localization: {
 >
   관리자
 </a>
-      <div className="min-h-screen bg-gray-900 text-white px-4 pt-2 pb-4 space-y-4">
+      <div className="min-h-screen bg-gray-900 text-white p-3 space-y-4">
         <div className={`text-sm md:text-base font-bold mb-2 text-center transition duration-300 ${isFlashingUpdate ? 'text-yellow-400' : 'text-gray-300'}`}>
           실시간 업데이트: {lastUpdated || '로딩 중...'}
         </div>
 
         <div className="flex flex-col md:flex-row w-full max-w-6xl mx-auto justify-center items-center gap-3">
           <div className="w-full md:w-[560px] flex-shrink-0">
-            <table className="w-full h-full border border-gray-700 bg-gray-800/40 text-base leading-none">
+            <table className="w-full h-full border border-gray-700 bg-gray-800/40 text-base leading-tight">
               <tbody>
                 <tr className="border-b border-gray-700">
-                  <td className="px-3 md:px-4 py-1.5 md:py-2 align-middle">
-                    <span className="text-sm md:text-lg font-bold text-blue-400">
+                  <td className="px-3 py-1 align-middle">
+                    <span className="text-sm md:text-base font-bold text-blue-400">
                       Naver USD/KRW
                     </span>
                   </td>
-                  <td className="px-2 md:px-4 py-1.5 md:py-2 text-right align-middle font-black text-2xl md:text-3xl lg:text-4xl tracking-tight">
+                  <td className="px-3 py-1 text-right align-middle font-black text-2xl md:text-3xl lg:text-4xl tracking-tight">
                     <span className={getDashboardValueClass('naverExchange')}>
                       {naverExchangeRate ? '₩' + naverExchangeRate.toLocaleString() : 'Loading...'}
                     </span>
@@ -646,12 +646,12 @@ localization: {
                 </tr>
 
                 <tr className="border-b border-gray-700">
-                  <td className="px-3 md:px-4 py-1.5 md:py-2 align-middle">
-                    <span className="text-sm md:text-lg font-bold text-blue-400">
+                  <td className="px-3 py-1 align-middle">
+                    <span className="text-sm md:text-base font-bold text-blue-400">
                       Current USD Futures
                     </span>
                   </td>
-                  <td className="px-2 md:px-4 py-1.5 md:py-2 text-right align-middle font-black text-2xl md:text-3xl lg:text-4xl tracking-tight">
+                  <td className="px-3 py-1 text-right align-middle font-black text-2xl md:text-3xl lg:text-4xl tracking-tight">
                     <span className={getDashboardValueClass('usdFutures')}>
                       {usdFuturesPrice ? '₩' + usdFuturesPrice.toLocaleString() : 'Loading...'}
                     </span>
@@ -660,17 +660,17 @@ localization: {
                 </tr>
 
                 <tr className="border-b border-gray-700">
-                  <td className="px-3 md:px-4 py-1.5 md:py-2 align-middle">
+                  <td className="px-3 py-1 align-middle">
                     <a
                       href="https://upbit.com/exchange?code=CRIX.UPBIT.KRW-USDT"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm md:text-lg font-bold text-blue-400 hover:underline"
+                      className="text-sm md:text-base font-bold text-blue-400 hover:underline"
                     >
                       Current USDT
                     </a>
                   </td>
-                  <td className="px-2 md:px-4 py-1.5 md:py-2 text-right align-middle font-black text-2xl md:text-3xl lg:text-4xl tracking-tight">
+                  <td className="px-3 py-1 text-right align-middle font-black text-2xl md:text-3xl lg:text-4xl tracking-tight">
                     <span className={getDashboardValueClass('currentUsdt')}>
                       {upbitUsdtTicker ? '₩' + upbitUsdtTicker.trade_price.toLocaleString() : 'Loading...'}
                     </span>
@@ -679,12 +679,12 @@ localization: {
                 </tr>
 
                 <tr className="border-b border-gray-700">
-                  <td className="px-3 md:px-4 py-1.5 md:py-2 align-middle">
-                    <span className="text-sm md:text-lg font-bold text-blue-400">
+                  <td className="px-3 py-1 align-middle">
+                    <span className="text-sm md:text-base font-bold text-blue-400">
                       Current Kimp
                     </span>
                   </td>
-                  <td className="px-2 md:px-4 py-1.5 md:py-2 text-right align-middle font-black text-2xl md:text-3xl lg:text-4xl tracking-tight">
+                  <td className="px-3 py-1 text-right align-middle font-black text-2xl md:text-3xl lg:text-4xl tracking-tight">
                     <span
                       className={getDashboardValueClass(
                         'currentKimp',
@@ -698,12 +698,12 @@ localization: {
                 </tr>
 
                 <tr className="border-b border-gray-700">
-                  <td className="px-3 md:px-4 py-1.5 md:py-2 align-middle">
-                    <span className="text-sm md:text-lg font-bold text-blue-400">
+                  <td className="px-3 py-1 align-middle">
+                    <span className="text-sm md:text-base font-bold text-blue-400">
                       Current Spread
                     </span>
                   </td>
-                  <td className="px-2 md:px-4 py-1.5 md:py-2 text-right align-middle font-black text-2xl md:text-3xl lg:text-4xl tracking-tight">
+                  <td className="px-3 py-1 text-right align-middle font-black text-2xl md:text-3xl lg:text-4xl tracking-tight">
                     <span
                       className={getDashboardValueClass(
                         'currentSpread',
@@ -717,12 +717,12 @@ localization: {
                 </tr>
 
                 <tr className="border-b border-gray-700">
-                  <td className="px-3 md:px-4 py-1.5 md:py-2 align-middle">
-                    <span className="text-sm md:text-lg font-bold text-gray-300">
+                  <td className="px-3 py-1 align-middle">
+                    <span className="text-sm md:text-base font-bold text-gray-300">
                       BTC FX Rate
                     </span>
                   </td>
-                  <td className="px-2 md:px-4 py-1.5 md:py-2 text-right align-middle font-black text-xl md:text-2xl lg:text-3xl tracking-tight">
+                  <td className="px-3 py-1 text-right align-middle font-black text-2xl md:text-3xl lg:text-4xl tracking-tight">
                     <span className={getDashboardValueClass('btcDivide')}>
                       {btcDivide !== null ? '₩' + btcDivide.toFixed(1) : 'Calculating...'}
                     </span>
@@ -730,12 +730,12 @@ localization: {
                 </tr>
 
                 <tr>
-                  <td className="px-3 md:px-4 py-1.5 md:py-2 align-middle">
-                    <span className="text-sm md:text-lg font-bold text-gray-300">
+                  <td className="px-3 py-1 align-middle">
+                    <span className="text-sm md:text-base font-bold text-gray-300">
                       BTC kimp
                     </span>
                   </td>
-                  <td className="px-2 md:px-4 py-1.5 md:py-2 text-right align-middle font-black text-xl md:text-2xl lg:text-3xl tracking-tight">
+                  <td className="px-3 py-1 text-right align-middle font-black text-2xl md:text-3xl lg:text-4xl tracking-tight">
                     <span
                       className={getDashboardValueClass(
                         'btcKimp',
@@ -751,7 +751,7 @@ localization: {
             </table>
           </div>
 
-          <div className="flex flex-col gap-1.5 justify-center items-center flex-shrink-0 w-full md:w-[360px]">
+          <div className="flex flex-col gap-1 justify-center items-center flex-shrink-0 w-full md:w-[340px]">
             <a href="https://accounts.binance.com/register?ref=NJ3Y7YUZ" target="_blank" rel="noopener noreferrer" className="block w-full">
               <img src="/binance-banner2.png" alt="바이낸스 배너" className="w-full h-[70px] md:h-[82px] object-contain" />
             </a>
@@ -766,10 +766,10 @@ localization: {
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-2 mb-2">
             <div>
               <h2 className="text-xl font-bold">USDT kimp</h2>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-gray-400 mt-0.5">
                 (USDT upbit ÷ KRX USD Futures - 1) × 100 DB based
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-[11px] text-gray-500 mt-0.5">
                 status: {chartStatus} / save: {lastSavedAt}
               </p>
 
@@ -802,7 +802,7 @@ localization: {
               </div>
             </div>
 
-            <div className="text-right shrink-0 w-full md:w-[210px] overflow-visible">
+            <div className="text-right shrink-0 w-full md:w-[280px] overflow-visible">
               <div className="text-sm md:text-base text-gray-400"> USDT kimp</div>
               <div className="text-3xl md:text-4xl font-black whitespace-nowrap leading-tight">
                 <span
@@ -815,10 +815,10 @@ localization: {
                 </span>
                 {renderFlashDot('currentKimp')}
               </div>
-              <div className="text-xs text-gray-500 mt-1">
+              <div className="text-[11px] text-gray-500 mt-0.5">
                 {intervalLabels[selectedInterval]} 차트 {displayedHistoryData.length}개
               </div>
-              <div className="text-xs text-gray-500 mt-1">
+              <div className="text-[11px] text-gray-500 mt-0.5">
                 마지막 저장: {lastSavedAt}
               </div>
             </div>
