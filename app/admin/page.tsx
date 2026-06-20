@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type StatusItem = {
   id: string;
@@ -17,6 +17,13 @@ type EntryBox = {
 
 export default function AdminPage() {
   const [showNetPnl, setShowNetPnl] = useState(false);
+  const [flash, setFlash] = useState(false);
+
+  const prevPricesRef = useRef<{ usd: number | null; usdt: number | null }>({
+    usd: null,
+    usdt: null,
+  });
+
   const [password, setPassword] = useState('');
   const [loggedIn, setLoggedIn] = useState(false);
 
@@ -172,8 +179,27 @@ export default function AdminPage() {
     );
     const upbitData = await upbitRes.json();
 
-    setCurrentUsd(Number(exchangeData.rate));
-    setCurrentUsdt(Number(upbitData?.[0]?.trade_price));
+    const newUsd = Number(exchangeData.rate);
+    const newUsdt = Number(upbitData?.[0]?.trade_price);
+
+    const prev = prevPricesRef.current;
+
+    if (
+      prev.usd !== null &&
+      prev.usdt !== null &&
+      (newUsd !== prev.usd || newUsdt !== prev.usdt)
+    ) {
+      setFlash(true);
+      setTimeout(() => setFlash(false), 500);
+    }
+
+    prevPricesRef.current = {
+      usd: newUsd,
+      usdt: newUsdt,
+    };
+
+    setCurrentUsd(newUsd);
+    setCurrentUsdt(newUsdt);
   }
 
   async function login() {
@@ -292,6 +318,10 @@ export default function AdminPage() {
             font-size: 18px !important;
           }
 
+          .small-value {
+            font-size: 12px !important;
+          }
+
           .entry-grid {
             grid-template-columns: 1fr !important;
             gap: 7px !important;
@@ -360,7 +390,13 @@ export default function AdminPage() {
               <div style={{ color: '#94a3b8', fontSize: 13 }}>Net PnL</div>
               <div
                 className="big-value"
-                style={{ ...bigValueStyle, cursor: 'pointer', userSelect: 'none' }}
+                style={{
+                  ...bigValueStyle,
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                  opacity: flash ? 0.35 : 1,
+                  transition: 'opacity 0.25s ease',
+                }}
                 onMouseEnter={() => setShowNetPnl(true)}
                 onMouseLeave={() => setShowNetPnl(false)}
                 onClick={() => setShowNetPnl((v) => !v)}
@@ -369,46 +405,43 @@ export default function AdminPage() {
                 {showNetPnl ? netPnl.toLocaleString() : '********'}
               </div>
 
-<div style={summaryGridStyle} className="summary-grid">
+              <div style={summaryGridStyle} className="summary-grid">
+                <Info
+                  label="Current USD Futures"
+                  value={currentUsd ? currentUsd.toLocaleString() : 'Loading'}
+                  flash={flash}
+                />
 
-  <Info
-    label="Current USD Futures"
-    value={currentUsd ? currentUsd.toLocaleString() : 'Loading'}
-  />
+                <Info
+                  label="Current USDT"
+                  value={currentUsdt ? currentUsdt.toLocaleString() : 'Loading'}
+                  flash={flash}
+                />
 
-  <Info
-    label="Current USDT"
-    value={currentUsdt ? currentUsdt.toLocaleString() : 'Loading'}
-  />
+                <Info
+                  label="Current Kimp"
+                  value={currentKimp !== null ? `${currentKimp.toFixed(3)}%` : 'Loading'}
+                  flash={flash}
+                />
 
-  
+                <Info
+                  label="Current Spread"
+                  value={currentSpread !== null ? currentSpread.toFixed(1) : 'Loading'}
+                  flash={flash}
+                />
 
-  <Info
-    label="Current Kimp"
-    value={currentKimp !== null ? `${currentKimp.toFixed(3)}%` : 'Loading'}
-  />
-    <Info
-    label="Current Spread"
-    value={currentSpread !== null ? currentSpread.toFixed(1) : 'Loading'}
-  />
+                <Info label="Entry Kimp" value={`${entryKimp.toFixed(3)}%`} small />
+                <Info label="Entry Spread" value={entrySpread.toFixed(1)} small />
 
-<Info label="Entry Kimp" value={`${entryKimp.toFixed(3)}%`} small />
+                <Info label="Avg USD Entry" value={avgUsdEntry.toFixed(1)} small />
+                <Info label="Avg USDT Entry" value={avgUsdtEntry.toFixed(1)} small />
 
-<Info label="Entry Spread" value={entrySpread.toFixed(1)} small />
+                <Info label="Futures PnL" value={futuresPnl.toLocaleString()} small />
+                <Info label="USDT PnL" value={usdtPnl.toLocaleString()} small />
 
-<Info label="Avg USD Entry" value={avgUsdEntry.toFixed(1)} small />
-
-<Info label="Avg USDT Entry" value={avgUsdtEntry.toFixed(1)} small />
-
-<Info label="Futures PnL" value={futuresPnl.toLocaleString()} small />
-
-<Info label="USDT PnL" value={usdtPnl.toLocaleString()} small />
-
-<Info label="Gross PnL" value={grossPnl.toLocaleString()} small />
-
-<Info label="Total Fee" value={`-${totalFee.toLocaleString()}`} small />
-
-</div>
+                <Info label="Gross PnL" value={grossPnl.toLocaleString()} small />
+                <Info label="Total Fee" value={`-${totalFee.toLocaleString()}`} small />
+              </div>
             </div>
 
             <div style={entryGridStyle} className="entry-grid">
@@ -485,28 +518,29 @@ function Info({
   label,
   value,
   small = false,
+  flash = false,
 }: {
   label: string;
   value: string;
   small?: boolean;
+  flash?: boolean;
 }) {
   return (
     <div style={infoRowStyle} className="info-row">
-
-      <div style={infoLabelStyle}>
+      <div style={infoLabelStyle} className="info-label">
         {label}
       </div>
 
       <div
-        style={
-          small
-            ? smallValueStyle
-            : bigValueStyle
-        }
+        className={small ? 'small-value' : 'big-value'}
+        style={{
+          ...(small ? smallValueStyle : bigValueStyle),
+          opacity: flash ? 0.35 : 1,
+          transition: 'opacity 0.25s ease',
+        }}
       >
         {value}
       </div>
-
     </div>
   );
 }
@@ -663,6 +697,7 @@ const bigValueStyle: React.CSSProperties = {
   lineHeight: 1.1,
   whiteSpace: 'nowrap',
 };
+
 const smallValueStyle: React.CSSProperties = {
   fontSize: 18,
   fontWeight: 800,
@@ -670,6 +705,7 @@ const smallValueStyle: React.CSSProperties = {
   lineHeight: 1.1,
   whiteSpace: 'nowrap',
 };
+
 const summaryGridStyle: React.CSSProperties = {
   marginTop: 14,
   paddingTop: 14,
