@@ -392,21 +392,21 @@ export default function AdminPage() {
     value={currentSpread !== null ? currentSpread.toFixed(1) : 'Loading'}
   />
 
-  <Info label="Entry Kimp" value={`${entryKimp.toFixed(3)}%`} />
-  <Info label="Entry Spread" value={entrySpread.toFixed(1)} />
+<Info label="Entry Kimp" value={`${entryKimp.toFixed(3)}%`} small />
 
+<Info label="Entry Spread" value={entrySpread.toFixed(1)} small />
 
-  <Info label="Avg USD Entry" value={avgUsdEntry.toFixed(1)} />
+<Info label="Avg USD Entry" value={avgUsdEntry.toFixed(1)} small />
 
-  <Info label="Avg USDT Entry" value={avgUsdtEntry.toFixed(1)} />
+<Info label="Avg USDT Entry" value={avgUsdtEntry.toFixed(1)} small />
 
-  <Info label="Futures PnL" value={futuresPnl.toLocaleString()} />
+<Info label="Futures PnL" value={futuresPnl.toLocaleString()} small />
 
-  <Info label="USDT PnL" value={usdtPnl.toLocaleString()} />
+<Info label="USDT PnL" value={usdtPnl.toLocaleString()} small />
 
-  <Info label="Gross PnL" value={grossPnl.toLocaleString()} />
+<Info label="Gross PnL" value={grossPnl.toLocaleString()} small />
 
-  <Info label="Total Fee" value={`-${totalFee.toLocaleString()}`} />
+<Info label="Total Fee" value={`-${totalFee.toLocaleString()}`} small />
 
 </div>
             </div>
@@ -481,11 +481,32 @@ export default function AdminPage() {
   );
 }
 
-function Info({ label, value }: { label: string; value: string }) {
+function Info({
+  label,
+  value,
+  small = false,
+}: {
+  label: string;
+  value: string;
+  small?: boolean;
+}) {
   return (
     <div style={infoRowStyle} className="info-row">
-      <div style={infoLabelStyle} className="info-label">{label}</div>
-      <div style={bigValueStyle} className="big-value">{value}</div>
+
+      <div style={infoLabelStyle}>
+        {label}
+      </div>
+
+      <div
+        style={
+          small
+            ? smallValueStyle
+            : bigValueStyle
+        }
+      >
+        {value}
+      </div>
+
     </div>
   );
 }
@@ -642,7 +663,13 @@ const bigValueStyle: React.CSSProperties = {
   lineHeight: 1.1,
   whiteSpace: 'nowrap',
 };
-
+const smallValueStyle: React.CSSProperties = {
+  fontSize: 18,
+  fontWeight: 800,
+  color: 'white',
+  lineHeight: 1.1,
+  whiteSpace: 'nowrap',
+};
 const summaryGridStyle: React.CSSProperties = {
   marginTop: 14,
   paddingTop: 14,
