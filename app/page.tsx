@@ -629,16 +629,16 @@ localization: {
         </div>
 
         <div className="flex flex-col md:flex-row w-full max-w-6xl mx-auto justify-center items-stretch gap-4">
-          <div className="w-full md:w-[620px] flex-shrink-0">
-            <table className="w-full h-full border border-gray-700 bg-gray-800/40 text-base leading-none">
+          <div className="w-full md:w-[560px] flex-shrink-0">
+            <table className="w-full h-full border border-gray-700 bg-gray-800/40 text-base leading-tight">
               <tbody>
                 <tr className="border-b border-gray-700">
-                  <td className="px-3 md:px-4 py-3 md:py-4 align-middle">
-                    <span className="text-sm md:text-lg font-bold text-blue-400">
+                  <td className="px-3 md:px-4 py-2 md:py-2 align-middle">
+                    <span className="text-xs md:text-sm font-bold text-blue-400">
                       Naver USD/KRW
                     </span>
                   </td>
-                  <td className="px-2 md:px-4 py-3 md:py-4 text-right align-middle font-black text-3xl md:text-5xl lg:text-6xl tracking-tight">
+                  <td className="px-2 md:px-4 py-2 md:py-2 text-right align-middle font-black text-2xl md:text-3xl lg:text-4xl tracking-tight">
                     <span className={getDashboardValueClass('naverExchange')}>
                       {naverExchangeRate ? '₩' + naverExchangeRate.toLocaleString() : 'Loading...'}
                     </span>
@@ -646,12 +646,12 @@ localization: {
                 </tr>
 
                 <tr className="border-b border-gray-700">
-                  <td className="px-3 md:px-4 py-3 md:py-4 align-middle">
-                    <span className="text-sm md:text-lg font-bold text-blue-400">
+                  <td className="px-3 md:px-4 py-2 md:py-2 align-middle">
+                    <span className="text-xs md:text-sm font-bold text-blue-400">
                       Current USD Futures
                     </span>
                   </td>
-                  <td className="px-2 md:px-4 py-3 md:py-4 text-right align-middle font-black text-3xl md:text-5xl lg:text-6xl tracking-tight">
+                  <td className="px-2 md:px-4 py-2 md:py-2 text-right align-middle font-black text-2xl md:text-3xl lg:text-4xl tracking-tight">
                     <span className={getDashboardValueClass('usdFutures')}>
                       {usdFuturesPrice ? '₩' + usdFuturesPrice.toLocaleString() : 'Loading...'}
                     </span>
@@ -660,17 +660,17 @@ localization: {
                 </tr>
 
                 <tr className="border-b border-gray-700">
-                  <td className="px-3 md:px-4 py-3 md:py-4 align-middle">
+                  <td className="px-3 md:px-4 py-2 md:py-2 align-middle">
                     <a
                       href="https://upbit.com/exchange?code=CRIX.UPBIT.KRW-USDT"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm md:text-lg font-bold text-blue-400 hover:underline"
+                      className="text-xs md:text-sm font-bold text-blue-400 hover:underline"
                     >
                       Current USDT
                     </a>
                   </td>
-                  <td className="px-2 md:px-4 py-3 md:py-4 text-right align-middle font-black text-3xl md:text-5xl lg:text-6xl tracking-tight">
+                  <td className="px-2 md:px-4 py-2 md:py-2 text-right align-middle font-black text-2xl md:text-3xl lg:text-4xl tracking-tight">
                     <span className={getDashboardValueClass('currentUsdt')}>
                       {upbitUsdtTicker ? '₩' + upbitUsdtTicker.trade_price.toLocaleString() : 'Loading...'}
                     </span>
@@ -679,12 +679,12 @@ localization: {
                 </tr>
 
                 <tr className="border-b border-gray-700">
-                  <td className="px-3 md:px-4 py-3 md:py-4 align-middle">
-                    <span className="text-sm md:text-lg font-bold text-blue-400">
+                  <td className="px-3 md:px-4 py-2 md:py-2 align-middle">
+                    <span className="text-xs md:text-sm font-bold text-blue-400">
                       Current Kimp
                     </span>
                   </td>
-                  <td className="px-2 md:px-4 py-3 md:py-4 text-right align-middle font-black text-3xl md:text-5xl lg:text-6xl tracking-tight">
+                  <td className="px-2 md:px-4 py-2 md:py-2 text-right align-middle font-black text-2xl md:text-3xl lg:text-4xl tracking-tight">
                     <span
                       className={getDashboardValueClass(
                         'currentKimp',
@@ -698,12 +698,12 @@ localization: {
                 </tr>
 
                 <tr className="border-b border-gray-700">
-                  <td className="px-3 md:px-4 py-3 md:py-4 align-middle">
-                    <span className="text-sm md:text-lg font-bold text-blue-400">
+                  <td className="px-3 md:px-4 py-2 md:py-2 align-middle">
+                    <span className="text-xs md:text-sm font-bold text-blue-400">
                       Current Spread
                     </span>
                   </td>
-                  <td className="px-2 md:px-4 py-3 md:py-4 text-right align-middle font-black text-3xl md:text-5xl lg:text-6xl tracking-tight">
+                  <td className="px-2 md:px-4 py-2 md:py-2 text-right align-middle font-black text-2xl md:text-3xl lg:text-4xl tracking-tight">
                     <span
                       className={getDashboardValueClass(
                         'currentSpread',
@@ -717,12 +717,12 @@ localization: {
                 </tr>
 
                 <tr className="border-b border-gray-700">
-                  <td className="px-3 md:px-4 py-3 md:py-4 align-middle">
-                    <span className="text-sm md:text-lg font-bold text-gray-300">
+                  <td className="px-3 md:px-4 py-2 md:py-2 align-middle">
+                    <span className="text-xs md:text-sm font-bold text-gray-300">
                       BTC FX Rate
                     </span>
                   </td>
-                  <td className="px-2 md:px-4 py-3 md:py-4 text-right align-middle font-black text-2xl md:text-4xl lg:text-5xl tracking-tight">
+                  <td className="px-2 md:px-4 py-2 md:py-2 text-right align-middle font-black text-xl md:text-2xl lg:text-3xl tracking-tight">
                     <span className={getDashboardValueClass('btcDivide')}>
                       {btcDivide !== null ? '₩' + btcDivide.toFixed(1) : 'Calculating...'}
                     </span>
@@ -730,12 +730,12 @@ localization: {
                 </tr>
 
                 <tr>
-                  <td className="px-3 md:px-4 py-3 md:py-4 align-middle">
-                    <span className="text-sm md:text-lg font-bold text-gray-300">
+                  <td className="px-3 md:px-4 py-2 md:py-2 align-middle">
+                    <span className="text-xs md:text-sm font-bold text-gray-300">
                       BTC kimp
                     </span>
                   </td>
-                  <td className="px-2 md:px-4 py-3 md:py-4 text-right align-middle font-black text-2xl md:text-4xl lg:text-5xl tracking-tight">
+                  <td className="px-2 md:px-4 py-2 md:py-2 text-right align-middle font-black text-xl md:text-2xl lg:text-3xl tracking-tight">
                     <span
                       className={getDashboardValueClass(
                         'btcKimp',
@@ -804,7 +804,7 @@ localization: {
 
             <div className="text-right shrink-0 w-full md:w-[240px] overflow-hidden">
               <div className="text-base md:text-lg text-gray-400"> USDT kimp</div>
-              <div className="text-4xl md:text-6xl font-black whitespace-nowrap leading-tight">
+              <div className="text-3xl md:text-4xl font-black whitespace-nowrap leading-tight">
                 <span
                   className={getDashboardValueClass(
                     'currentKimp',
