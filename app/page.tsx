@@ -668,7 +668,7 @@ localization: {
                 {
                   key: 'currentSpread',
                   label: 'Current Spread',
-                  value: currentSpread !== null ? currentSpread.toFixed(2) + '원' : '계산 중...',
+                  value: currentSpread !== null ? currentSpread.toFixed(2) : '계산 중...',
                   color: currentSpread !== null ? (currentSpread >= 0 ? 'text-red-500' : 'text-blue-500') : 'text-gray-400',
                   dot: true,
                   labelColor: 'text-blue-400',
