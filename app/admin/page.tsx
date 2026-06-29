@@ -510,24 +510,6 @@ export default function AdminPage() {
                         {entrySaveMessages[index]}
                       </div>
                     )}
-
-                    <button
-                      onClick={() => saveEntryPosition(index)}
-                      style={{
-                        ...buttonStyle,
-                        marginTop: 10,
-                        padding: '9px',
-                        fontSize: 13,
-                      }}
-                    >
-                      Save Entry {index + 1}
-                    </button>
-
-                    {entrySaveMessages[index] && (
-                      <div style={{ marginTop: 8, color: '#38bdf8', fontWeight: 700 }}>
-                        {entrySaveMessages[index]}
-                      </div>
-                    )}
                   </div>
                 );
               })}
