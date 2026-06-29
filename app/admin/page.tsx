@@ -43,6 +43,7 @@ export default function AdminPage() {
   const [currentUsdt, setCurrentUsdt] = useState<number | null>(null);
 
   const [message, setMessage] = useState('');
+  const [entrySaveMessages, setEntrySaveMessages] = useState<string[]>(['', '', '']);
   const [statusItems, setStatusItems] = useState<StatusItem[]>([]);
 
   const parsedEntries = entries.map((e) => {
@@ -139,9 +140,17 @@ export default function AdminPage() {
     }
   }, []);
 
-  useEffect(() => {
+  function saveEntryPosition(index: number) {
     localStorage.setItem('kimpnow_position_v3', JSON.stringify({ entries }));
-  }, [entries]);
+    setEntrySaveMessages((prev) =>
+      prev.map((message, i) => (i === index ? 'Saved' : message))
+    );
+    setTimeout(() => {
+      setEntrySaveMessages((prev) =>
+        prev.map((message, i) => (i === index ? '' : message))
+      );
+    }, 2000);
+  }
 
   function updateEntry(index: number, key: keyof EntryBox, value: string) {
     setEntries((prev) =>
@@ -480,6 +489,45 @@ export default function AdminPage() {
                       readOnly
                       style={entryInputStyle}
                     />
+                    <div style={{marginTop:8,fontWeight:700,color:'#38bdf8'}}>
+                      Entry Kimp: {parsedEntries[index].valid ? (((parsedEntries[index].usdt / parsedEntries[index].usd)-1)*100).toFixed(3)+'%' : '-'}
+                    </div>
+
+                    <button
+                      onClick={() => saveEntryPosition(index)}
+                      style={{
+                        ...buttonStyle,
+                        marginTop: 10,
+                        padding: '9px',
+                        fontSize: 13,
+                      }}
+                    >
+                      Save Entry {index + 1}
+                    </button>
+
+                    {entrySaveMessages[index] && (
+                      <div style={{ marginTop: 8, color: '#38bdf8', fontWeight: 700 }}>
+                        {entrySaveMessages[index]}
+                      </div>
+                    )}
+
+                    <button
+                      onClick={() => saveEntryPosition(index)}
+                      style={{
+                        ...buttonStyle,
+                        marginTop: 10,
+                        padding: '9px',
+                        fontSize: 13,
+                      }}
+                    >
+                      Save Entry {index + 1}
+                    </button>
+
+                    {entrySaveMessages[index] && (
+                      <div style={{ marginTop: 8, color: '#38bdf8', fontWeight: 700 }}>
+                        {entrySaveMessages[index]}
+                      </div>
+                    )}
                   </div>
                 );
               })}
