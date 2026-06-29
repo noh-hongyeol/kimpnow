@@ -111,46 +111,48 @@ export default function AdminPage() {
   const netPnl = grossPnl - totalFee;
 
   useEffect(() => {
-    const saved =
-      localStorage.getItem('kimpnow_position_v3') ||
-      localStorage.getItem('kimpnow_position_v2');
-
-    if (saved) {
+    async function loadSavedPosition() {
       try {
-        const parsed = JSON.parse(saved);
+        const res = await fetch('/api/admin/position', { cache: 'no-store' });
+        const data = await res.json();
 
-        if (Array.isArray(parsed.entries)) {
-          setEntries(parsed.entries);
-        } else {
-          setEntries([
-            {
-              usd: String(parsed.entryUsd1 ?? '1528.6'),
-              contracts: String(parsed.contractCount1 ?? '10'),
-              usdt: String(parsed.entryUsdt1 ?? '1507'),
-            },
-            {
-              usd: String(parsed.entryUsd2 ?? ''),
-              contracts: String(parsed.contractCount2 ?? ''),
-              usdt: String(parsed.entryUsdt2 ?? ''),
-            },
-            { usd: '', contracts: '', usdt: '' },
-          ]);
+        if (data.success && Array.isArray(data.entries)) {
+          setEntries(data.entries);
+          return;
         }
       } catch {}
-    }
-  }, []);
 
-  function saveEntryPosition(index: number) {
-    localStorage.setItem('kimpnow_position_v3', JSON.stringify({ entries }));
-    setEntrySaveMessages((prev) =>
-      prev.map((message, i) => (i === index ? 'Saved' : message))
-    );
-    setTimeout(() => {
-      setEntrySaveMessages((prev) =>
-        prev.map((message, i) => (i === index ? '' : message))
-      );
-    }, 2000);
-  }
+      const saved =
+        localStorage.getItem('kimpnow_position_v3') ||
+        localStorage.getItem('kimpnow_position_v2');
+
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+
+          if (Array.isArray(parsed.entries)) {
+            setEntries(parsed.entries);
+          } else {
+            setEntries([
+              {
+                usd: String(parsed.entryUsd1 ?? '1528.6'),
+                contracts: String(parsed.contractCount1 ?? '10'),
+                usdt: String(parsed.entryUsdt1 ?? '1507'),
+              },
+              {
+                usd: String(parsed.entryUsd2 ?? ''),
+                contracts: String(parsed.contractCount2 ?? ''),
+                usdt: String(parsed.entryUsdt2 ?? ''),
+              },
+              { usd: '', contracts: '', usdt: '' },
+            ]);
+          }
+        } catch {}
+      }
+    }
+
+    loadSavedPosition();
+  }, []);
 
   function updateEntry(index: number, key: keyof EntryBox, value: string) {
     setEntries((prev) =>
@@ -158,6 +160,39 @@ export default function AdminPage() {
         i === index ? { ...entry, [key]: value } : entry
       )
     );
+  }
+
+  async function saveEntryPosition(index: number) {
+    try {
+      const res = await fetch('/api/admin/position', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entries }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        localStorage.setItem('kimpnow_position_v3', JSON.stringify({ entries }));
+        setEntrySaveMessages((prev) =>
+          prev.map((message, i) => (i === index ? 'Saved to DB' : message))
+        );
+      } else {
+        setEntrySaveMessages((prev) =>
+          prev.map((message, i) => (i === index ? 'Save failed' : message))
+        );
+      }
+    } catch {
+      setEntrySaveMessages((prev) =>
+        prev.map((message, i) => (i === index ? 'Save error' : message))
+      );
+    }
+
+    setTimeout(() => {
+      setEntrySaveMessages((prev) =>
+        prev.map((message, i) => (i === index ? '' : message))
+      );
+    }, 2000);
   }
 
   async function loadSettings() {
