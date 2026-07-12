@@ -50,7 +50,7 @@ const intervalLabels: Record<IntervalKey, string> = {
 
 const FAST_POLL_MS = 10_000;
 const NAVER_POLL_MS = 60_000;
-const PREMIUM_TABLE_POLL_MS = 5 * 60_000;
+const PREMIUM_TABLE_POLL_MS = 60_000;
 const MARKET_ALL_POLL_MS = 10 * 60_000;
 
 const toUnixTime = (createdAt: string): UTCTimestamp => {
