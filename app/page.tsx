@@ -48,6 +48,11 @@ const intervalLabels: Record<IntervalKey, string> = {
   '4h': '4h',
 };
 
+const FAST_POLL_MS = 10_000;
+const NAVER_POLL_MS = 60_000;
+const PREMIUM_TABLE_POLL_MS = 5 * 60_000;
+const MARKET_ALL_POLL_MS = 10 * 60_000;
+
 const toUnixTime = (createdAt: string): UTCTimestamp => {
   return Math.floor(new Date(createdAt).getTime() / 1000) as UTCTimestamp;
 };
@@ -104,6 +109,9 @@ export default function Home() {
   const lineSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
   const lastSavedMinuteRef = useRef<string | null>(null);
   const previousDashboardValuesRef = useRef<Record<string, string | null>>({});
+  const upbitMarketsRef = useRef<string[]>([]);
+  const marketAllFetchedAtRef = useRef<number>(0);
+  const inFlightRef = useRef<Record<string, boolean>>({});
 
   const [naverExchangeRate, setNaverExchangeRate] = useState<number>(0);
   const [usdFuturesPrice, setUsdFuturesPrice] = useState<number>(0);
@@ -118,6 +126,8 @@ export default function Home() {
   const [bithumbTickers, setBithumbTickers] = useState<TickerData[]>([]);
   const [binanceTickers, setBinanceTickers] = useState<BinanceTickerData[]>([]);
   const [bybitTickers, setBybitTickers] = useState<BybitTickerData[]>([]);
+  const [topUpbitTickers, setTopUpbitTickers] = useState<TickerData[]>([]);
+  const [topForeignBtcPrice, setTopForeignBtcPrice] = useState<number | null>(null);
 
   const [domesticExchange, setDomesticExchange] = useState<'Upbit' | 'Bithumb'>('Upbit');
   const [foreignExchange, setForeignExchange] = useState<'Binance' | 'Bybit'>('Binance');
@@ -187,79 +197,174 @@ const displayedHistoryData = useMemo(() => {
     return next;
   };
 
-  const fetchNaverExchangeRate = async () => {
-    const res = await axios.get('/api/naver-exchange', {
-      params: { t: Date.now() },
-      headers: { 'Cache-Control': 'no-cache' },
-    });
+  const runRequest = async (key: string, task: () => Promise<void>) => {
+    if (inFlightRef.current[key]) return;
 
-    setNaverExchangeRate(Number(res.data.rate));
+    inFlightRef.current[key] = true;
+    try {
+      await task();
+    } catch (error) {
+      console.error(`[${key}] request failed`, error);
+    } finally {
+      inFlightRef.current[key] = false;
+    }
+  };
+
+  const fetchNaverExchangeRate = async () => {
+    await runRequest('naver-exchange', async () => {
+      const res = await axios.get('/api/naver-exchange', {
+        params: { t: Date.now() },
+        headers: { 'Cache-Control': 'no-cache' },
+      });
+
+      setNaverExchangeRate(Number(res.data.rate));
+    });
   };
 
   const fetchUsdFuturesPrice = async () => {
-    const res = await axios.get('/api/exchange', {
-      params: { t: Date.now() },
-      headers: { 'Cache-Control': 'no-cache' },
-    });
+    await runRequest('usd-futures', async () => {
+      const res = await axios.get('/api/exchange', {
+        params: { t: Date.now() },
+        headers: { 'Cache-Control': 'no-cache' },
+      });
 
-    setUsdFuturesPrice(Number(res.data.rate));
-    setUsdFuturesMeta({
-      code: res.data.code,
-      name: res.data.name,
-      market: res.data.market,
-      tradable: res.data.tradable,
-      isStale: res.data.isStale,
+      setUsdFuturesPrice(Number(res.data.rate));
+      setUsdFuturesMeta({
+        code: res.data.code,
+        name: res.data.name,
+        market: res.data.market,
+        tradable: res.data.tradable,
+        isStale: res.data.isStale,
+      });
     });
+  };
+
+  const fetchTopUpbitTickers = async () => {
+    await runRequest('top-upbit', async () => {
+      const res = await axios.get('/api/upbit', {
+        params: { markets: 'KRW-USDT,KRW-BTC' },
+      });
+
+      const tickers = res.data.map((item: any) => ({
+        market: item.market,
+        trade_price: item.trade_price,
+        acc_trade_price_24h: item.acc_trade_price_24h,
+        change_rate: item.signed_change_rate * 100,
+      }));
+
+      setTopUpbitTickers(tickers);
+    });
+  };
+
+  const fetchTopForeignBtcPrice = async () => {
+    const requestKey = `top-foreign-${foreignExchange.toLowerCase()}`;
+
+    await runRequest(requestKey, async () => {
+      if (foreignExchange === 'Binance') {
+        const res = await axios.get(
+          'https://api.binance.com/api/v3/ticker/price',
+          { params: { symbol: 'BTCUSDT' } }
+        );
+        setTopForeignBtcPrice(Number(res.data.price));
+        return;
+      }
+
+      const res = await axios.get(
+        'https://api.bybit.com/v5/market/tickers',
+        { params: { category: 'spot', symbol: 'BTCUSDT' } }
+      );
+      const ticker = res.data?.result?.list?.[0];
+      setTopForeignBtcPrice(ticker ? Number(ticker.lastPrice) : null);
+    });
+  };
+
+  const fetchUpbitMarkets = async (force = false): Promise<string[]> => {
+    const now = Date.now();
+    const cachedMarkets = upbitMarketsRef.current;
+    const cacheIsFresh =
+      cachedMarkets.length > 0 &&
+      now - marketAllFetchedAtRef.current < MARKET_ALL_POLL_MS;
+
+    if (!force && cacheIsFresh) return cachedMarkets;
+
+    if (inFlightRef.current['upbit-market-all']) {
+      return cachedMarkets;
+    }
+
+    inFlightRef.current['upbit-market-all'] = true;
+    try {
+      const marketsRes = await axios.get('/api/upbit/market-all');
+      const krwMarkets = marketsRes.data
+        .filter((m: any) => m.market.startsWith('KRW-'))
+        .map((m: any) => m.market);
+
+      upbitMarketsRef.current = krwMarkets;
+      marketAllFetchedAtRef.current = Date.now();
+      return krwMarkets;
+    } catch (error) {
+      console.error('[upbit-market-all] request failed', error);
+      return cachedMarkets;
+    } finally {
+      inFlightRef.current['upbit-market-all'] = false;
+    }
   };
 
   const fetchUpbitTickers = async () => {
-    const marketsRes = await axios.get('/api/upbit/market-all');
-    const krwMarkets = marketsRes.data
-      .filter((m: any) => m.market.startsWith('KRW-'))
-      .map((m: any) => m.market);
+    await runRequest('upbit-table', async () => {
+      const krwMarkets = await fetchUpbitMarkets(false);
+      if (krwMarkets.length === 0) return;
 
-    const tickersRes = await axios.get('/api/upbit', {
-      params: { markets: krwMarkets.join(',') },
+      const tickersRes = await axios.get('/api/upbit', {
+        params: { markets: krwMarkets.join(',') },
+      });
+
+      const tickers = tickersRes.data.map((item: any) => ({
+        market: item.market,
+        trade_price: item.trade_price,
+        acc_trade_price_24h: item.acc_trade_price_24h,
+        change_rate: item.signed_change_rate * 100,
+      }));
+
+      setUpbitTickers((prev) => triggerFlashOnChange(prev, tickers));
     });
-
-    const tickers = tickersRes.data.map((item: any) => ({
-      market: item.market,
-      trade_price: item.trade_price,
-      acc_trade_price_24h: item.acc_trade_price_24h,
-      change_rate: item.signed_change_rate * 100,
-    }));
-
-    setUpbitTickers((prev) => triggerFlashOnChange(prev, tickers));
   };
 
   const fetchBithumbTickers = async () => {
-    const res = await axios.get('/api/bithumb/ticker');
-    const data = res.data.data;
+    await runRequest('bithumb-table', async () => {
+      const res = await axios.get('/api/bithumb/ticker');
+      const data = res.data.data;
 
-    const tickers = Object.keys(data)
-      .filter((key) => key !== 'date')
-      .map((key) => ({
-        market: `KRW-${key}`,
-        trade_price: parseFloat(data[key].closing_price),
-        acc_trade_price_24h: parseFloat(data[key].acc_trade_value),
-        change_rate: parseFloat(data[key].fluctate_rate_24H) || 0,
-      }));
+      const tickers = Object.keys(data)
+        .filter((key) => key !== 'date')
+        .map((key) => ({
+          market: `KRW-${key}`,
+          trade_price: parseFloat(data[key].closing_price),
+          acc_trade_price_24h: parseFloat(data[key].acc_trade_value),
+          change_rate: parseFloat(data[key].fluctate_rate_24H) || 0,
+        }));
 
-    setBithumbTickers((prev) => triggerFlashOnChange(prev, tickers));
+      setBithumbTickers((prev) => triggerFlashOnChange(prev, tickers));
+    });
   };
 
   const fetchBinanceTickers = async () => {
-    const res = await axios.get('https://api.binance.com/api/v3/ticker/price');
-    setBinanceTickers((prev) => triggerFlashOnChange(prev, res.data));
+    await runRequest('binance-table', async () => {
+      const res = await axios.get('https://api.binance.com/api/v3/ticker/price');
+      setBinanceTickers((prev) => triggerFlashOnChange(prev, res.data));
+    });
   };
 
   const fetchBybitTickers = async () => {
-    const res = await axios.get('https://api.bybit.com/v5/market/tickers?category=spot');
-    const tickers = res.data.result.list.map((item: any) => ({
-      symbol: item.symbol,
-      lastPrice: item.lastPrice,
-    }));
-    setBybitTickers((prev) => triggerFlashOnChange(prev, tickers));
+    await runRequest('bybit-table', async () => {
+      const res = await axios.get(
+        'https://api.bybit.com/v5/market/tickers?category=spot'
+      );
+      const tickers = res.data.result.list.map((item: any) => ({
+        symbol: item.symbol,
+        lastPrice: item.lastPrice,
+      }));
+      setBybitTickers((prev) => triggerFlashOnChange(prev, tickers));
+    });
   };
 
   const calculateKimp = (krwPrice: number, foreignPrice: number | null): number | null => {
@@ -409,8 +514,6 @@ localization: {
     chartRef.current = chart;
     lineSeriesRef.current = lineSeries;
 
-    loadHistory();
-
     const handleResize = () => {
       if (!chartContainerRef.current) return;
       chart.applyOptions({ width: chartContainerRef.current.clientWidth });
@@ -437,31 +540,97 @@ localization: {
   }, [displayedHistoryData]);
 
   useEffect(() => {
-    loadHistory();
-
-    const interval = setInterval(() => {
-      loadHistory();
-    }, 60000);
-
-    return () => clearInterval(interval);
+    loadHistory(selectedInterval);
   }, [selectedInterval]);
 
   useEffect(() => {
-    const fetchAll = async () => {
+    const fetchFastData = async () => {
+      if (document.hidden) return;
+
       await Promise.all([
-        fetchNaverExchangeRate(),
         fetchUsdFuturesPrice(),
-        fetchUpbitTickers(),
-        fetchBithumbTickers(),
-        fetchBinanceTickers(),
-        fetchBybitTickers(),
+        fetchTopUpbitTickers(),
+        fetchTopForeignBtcPrice(),
       ]);
     };
 
-    fetchAll();
-    const interval = setInterval(fetchAll, 10000);
-    return () => clearInterval(interval);
+    fetchFastData();
+    const interval = setInterval(fetchFastData, FAST_POLL_MS);
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) fetchFastData();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [foreignExchange]);
+
+  useEffect(() => {
+    const fetchNaver = () => {
+      if (document.hidden) return;
+      fetchNaverExchangeRate();
+    };
+
+    fetchNaver();
+    const interval = setInterval(fetchNaver, NAVER_POLL_MS);
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) fetchNaver();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
+
+  useEffect(() => {
+    const fetchSelectedTable = async () => {
+      if (document.hidden) return;
+
+      await Promise.all([
+        domesticExchange === 'Upbit'
+          ? fetchUpbitTickers()
+          : fetchBithumbTickers(),
+        foreignExchange === 'Binance'
+          ? fetchBinanceTickers()
+          : fetchBybitTickers(),
+      ]);
+    };
+
+    fetchSelectedTable();
+    const interval = setInterval(fetchSelectedTable, PREMIUM_TABLE_POLL_MS);
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) fetchSelectedTable();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [domesticExchange, foreignExchange]);
+
+  useEffect(() => {
+    if (domesticExchange !== 'Upbit') return;
+
+    const refreshMarketList = () => {
+      if (document.hidden) return;
+      fetchUpbitMarkets(true);
+    };
+
+    const interval = setInterval(refreshMarketList, MARKET_ALL_POLL_MS);
+
+    return () => clearInterval(interval);
+  }, [domesticExchange]);
 
   const tickers = domesticExchange === 'Upbit' ? upbitTickers : bithumbTickers;
 
@@ -493,8 +662,8 @@ localization: {
       return (Number(aValue) - Number(bValue)) * order;
     });
 
-  const btcTicker = tickers.find((t) => t.market === 'KRW-BTC');
-  const btcForeignPrice = getForeignPrice('KRW-BTC');
+  const btcTicker = topUpbitTickers.find((t) => t.market === 'KRW-BTC');
+  const btcForeignPrice = topForeignBtcPrice;
 
   const btcKimp =
     btcTicker && btcForeignPrice !== null
@@ -506,7 +675,7 @@ localization: {
       ? btcTicker.trade_price / btcForeignPrice
       : null;
 
-  const upbitUsdtTicker = upbitTickers.find((t) => t.market === 'KRW-USDT');
+  const upbitUsdtTicker = topUpbitTickers.find((t) => t.market === 'KRW-USDT');
 
   const usdtKimp =
     upbitUsdtTicker && usdFuturesPrice
@@ -589,12 +758,10 @@ localization: {
             return Array.from(map.values()).sort((a, b) => Number(a.time) - Number(b.time));
           });
 
-          await loadHistory();
           setLastSavedAt(new Date(savedRow.created_at).toLocaleString('ko-KR'));
           return;
         }
 
-        await loadHistory();
         setLastSavedAt(new Date().toLocaleString('ko-KR'));
       } catch (error: any) {
         setLastSavedAt(`저장 에러: ${error?.message ?? String(error)}`);
@@ -750,9 +917,8 @@ localization: {
                     key={key}
                     type="button"
                     onClick={() => {
-  setSelectedInterval(key);
-  loadHistory(key);
-}}
+                      setSelectedInterval(key);
+                    }}
                     className={`px-3 py-1 rounded border text-sm ${
                       selectedInterval === key
                         ? 'bg-yellow-400 text-black border-yellow-400'
