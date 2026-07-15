@@ -1,8 +1,15 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import axios from 'axios';
-import { createChart, LineSeries, type IChartApi, type ISeriesApi, type LineData, type UTCTimestamp } from 'lightweight-charts';
+import { useEffect, useMemo, useRef, useState } from "react";
+import axios from "axios";
+import {
+  createChart,
+  LineSeries,
+  type IChartApi,
+  type ISeriesApi,
+  type LineData,
+  type UTCTimestamp,
+} from "lightweight-charts";
 
 interface TickerData {
   market: string;
@@ -30,28 +37,29 @@ interface KimpHistoryRow {
   exchange_rate?: number | null;
 }
 
-type IntervalKey = '1m' | '5m' | '15m' | '1h' | '4h';
+type IntervalKey = "1m" | "5m" | "15m" | "1h" | "4h";
 
 const intervalMinutes: Record<IntervalKey, number> = {
-  '1m': 1,
-  '5m': 5,
-  '15m': 15,
-  '1h': 60,
-  '4h': 240,
+  "1m": 1,
+  "5m": 5,
+  "15m": 15,
+  "1h": 60,
+  "4h": 240,
 };
 
 const intervalLabels: Record<IntervalKey, string> = {
-  '1m': '1m',
-  '5m': '5m',
-  '15m': '15m',
-  '1h': '1h',
-  '4h': '4h',
+  "1m": "1m",
+  "5m": "5m",
+  "15m": "15m",
+  "1h": "1h",
+  "4h": "4h",
 };
 
 const FAST_POLL_MS = 10_000;
 const NAVER_POLL_MS = 60_000;
 const PREMIUM_TABLE_POLL_MS = 60_000;
 const MARKET_ALL_POLL_MS = 10 * 60_000;
+const ENABLE_PREMIUM_TABLE = false;
 
 const toUnixTime = (createdAt: string): UTCTimestamp => {
   return Math.floor(new Date(createdAt).getTime() / 1000) as UTCTimestamp;
@@ -66,7 +74,7 @@ const normalizeHistory = (rows: any[]): LineData[] => {
 
     if (!timeValue || kimpValue === null || kimpValue === undefined) return;
 
-const time = Math.floor(new Date(timeValue).getTime() / 1000);
+    const time = Math.floor(new Date(timeValue).getTime() / 1000);
 
     const value = Number(kimpValue);
 
@@ -79,11 +87,14 @@ const time = Math.floor(new Date(timeValue).getTime() / 1000);
   });
 
   return Array.from(map.values()).sort(
-    (a, b) => Number(a.time) - Number(b.time)
+    (a, b) => Number(a.time) - Number(b.time),
   );
 };
 
-const aggregateHistory = (data: LineData[], interval: IntervalKey): LineData[] => {
+const aggregateHistory = (
+  data: LineData[],
+  interval: IntervalKey,
+): LineData[] => {
   const minutes = intervalMinutes[interval];
   if (minutes === 1) return data;
 
@@ -100,13 +111,15 @@ const aggregateHistory = (data: LineData[], interval: IntervalKey): LineData[] =
     });
   });
 
-  return Array.from(buckets.values()).sort((a, b) => Number(a.time) - Number(b.time));
+  return Array.from(buckets.values()).sort(
+    (a, b) => Number(a.time) - Number(b.time),
+  );
 };
 
 export default function Home() {
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const lineSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+  const lineSeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
   const lastSavedMinuteRef = useRef<string | null>(null);
   const previousDashboardValuesRef = useRef<Record<string, string | null>>({});
   const upbitMarketsRef = useRef<string[]>([]);
@@ -127,27 +140,42 @@ export default function Home() {
   const [binanceTickers, setBinanceTickers] = useState<BinanceTickerData[]>([]);
   const [bybitTickers, setBybitTickers] = useState<BybitTickerData[]>([]);
   const [topUpbitTickers, setTopUpbitTickers] = useState<TickerData[]>([]);
-  const [topForeignBtcPrice, setTopForeignBtcPrice] = useState<number | null>(null);
+  const [topForeignBtcPrice, setTopForeignBtcPrice] = useState<number | null>(
+    null,
+  );
 
-  const [domesticExchange, setDomesticExchange] = useState<'Upbit' | 'Bithumb'>('Upbit');
-  const [foreignExchange, setForeignExchange] = useState<'Binance' | 'Bybit'>('Binance');
+  const [domesticExchange, setDomesticExchange] = useState<"Upbit" | "Bithumb">(
+    "Upbit",
+  );
+  const [foreignExchange, setForeignExchange] = useState<"Binance" | "Bybit">(
+    "Binance",
+  );
 
-  const [sortKey, setSortKey] = useState<'market' | 'change_rate' | 'acc_trade_price_24h' | 'trade_price' | 'foreign_price' | 'kimp'>('acc_trade_price_24h');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortKey, setSortKey] = useState<
+    | "market"
+    | "change_rate"
+    | "acc_trade_price_24h"
+    | "trade_price"
+    | "foreign_price"
+    | "kimp"
+  >("acc_trade_price_24h");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [isFlashingUpdate, setIsFlashingUpdate] = useState(false);
   const [flashStates, setFlashStates] = useState<Record<string, boolean>>({});
-  const [dashboardFlashStates, setDashboardFlashStates] = useState<Record<string, boolean>>({});
+  const [dashboardFlashStates, setDashboardFlashStates] = useState<
+    Record<string, boolean>
+  >({});
 
   const [rawHistoryData, setRawHistoryData] = useState<LineData[]>([]);
-  const [selectedInterval, setSelectedInterval] = useState<IntervalKey>('1m');
-  const [chartStatus, setChartStatus] = useState<string>('히스토리 로딩 중');
-  const [lastSavedAt, setLastSavedAt] = useState<string>('대기 중');
+  const [selectedInterval, setSelectedInterval] = useState<IntervalKey>("1m");
+  const [chartStatus, setChartStatus] = useState<string>("히스토리 로딩 중");
+  const [lastSavedAt, setLastSavedAt] = useState<string>("대기 중");
 
-const displayedHistoryData = useMemo(() => {
-  return aggregateHistory(rawHistoryData, selectedInterval);
-}, [rawHistoryData, selectedInterval]);
+  const displayedHistoryData = useMemo(() => {
+    return aggregateHistory(rawHistoryData, selectedInterval);
+  }, [rawHistoryData, selectedInterval]);
 
   useEffect(() => {
     if (!lastUpdated) return;
@@ -160,15 +188,15 @@ const displayedHistoryData = useMemo(() => {
   useEffect(() => {
     const updateTimestamp = () => {
       const now = new Date();
-      const datePart = now.toLocaleDateString('ko-KR', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
+      const datePart = now.toLocaleDateString("ko-KR", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
       });
-      const timePart = now.toLocaleTimeString('ko-KR', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
+      const timePart = now.toLocaleTimeString("ko-KR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
       });
       setLastUpdated(`${datePart} ${timePart}`);
     };
@@ -211,10 +239,10 @@ const displayedHistoryData = useMemo(() => {
   };
 
   const fetchNaverExchangeRate = async () => {
-    await runRequest('naver-exchange', async () => {
-      const res = await axios.get('/api/naver-exchange', {
+    await runRequest("naver-exchange", async () => {
+      const res = await axios.get("/api/naver-exchange", {
         params: { t: Date.now() },
-        headers: { 'Cache-Control': 'no-cache' },
+        headers: { "Cache-Control": "no-cache" },
       });
 
       setNaverExchangeRate(Number(res.data.rate));
@@ -222,10 +250,10 @@ const displayedHistoryData = useMemo(() => {
   };
 
   const fetchUsdFuturesPrice = async () => {
-    await runRequest('usd-futures', async () => {
-      const res = await axios.get('/api/exchange', {
+    await runRequest("usd-futures", async () => {
+      const res = await axios.get("/api/exchange", {
         params: { t: Date.now() },
-        headers: { 'Cache-Control': 'no-cache' },
+        headers: { "Cache-Control": "no-cache" },
       });
 
       setUsdFuturesPrice(Number(res.data.rate));
@@ -240,9 +268,9 @@ const displayedHistoryData = useMemo(() => {
   };
 
   const fetchTopUpbitTickers = async () => {
-    await runRequest('top-upbit', async () => {
-      const res = await axios.get('/api/upbit', {
-        params: { markets: 'KRW-USDT,KRW-BTC' },
+    await runRequest("top-upbit", async () => {
+      const res = await axios.get("/api/upbit", {
+        params: { markets: "KRW-USDT,KRW-BTC" },
       });
 
       const tickers = res.data.map((item: any) => ({
@@ -260,19 +288,18 @@ const displayedHistoryData = useMemo(() => {
     const requestKey = `top-foreign-${foreignExchange.toLowerCase()}`;
 
     await runRequest(requestKey, async () => {
-      if (foreignExchange === 'Binance') {
+      if (foreignExchange === "Binance") {
         const res = await axios.get(
-          'https://api.binance.com/api/v3/ticker/price',
-          { params: { symbol: 'BTCUSDT' } }
+          "https://api.binance.com/api/v3/ticker/price",
+          { params: { symbol: "BTCUSDT" } },
         );
         setTopForeignBtcPrice(Number(res.data.price));
         return;
       }
 
-      const res = await axios.get(
-        'https://api.bybit.com/v5/market/tickers',
-        { params: { category: 'spot', symbol: 'BTCUSDT' } }
-      );
+      const res = await axios.get("https://api.bybit.com/v5/market/tickers", {
+        params: { category: "spot", symbol: "BTCUSDT" },
+      });
       const ticker = res.data?.result?.list?.[0];
       setTopForeignBtcPrice(ticker ? Number(ticker.lastPrice) : null);
     });
@@ -287,35 +314,35 @@ const displayedHistoryData = useMemo(() => {
 
     if (!force && cacheIsFresh) return cachedMarkets;
 
-    if (inFlightRef.current['upbit-market-all']) {
+    if (inFlightRef.current["upbit-market-all"]) {
       return cachedMarkets;
     }
 
-    inFlightRef.current['upbit-market-all'] = true;
+    inFlightRef.current["upbit-market-all"] = true;
     try {
-      const marketsRes = await axios.get('/api/upbit/market-all');
+      const marketsRes = await axios.get("/api/upbit/market-all");
       const krwMarkets = marketsRes.data
-        .filter((m: any) => m.market.startsWith('KRW-'))
+        .filter((m: any) => m.market.startsWith("KRW-"))
         .map((m: any) => m.market);
 
       upbitMarketsRef.current = krwMarkets;
       marketAllFetchedAtRef.current = Date.now();
       return krwMarkets;
     } catch (error) {
-      console.error('[upbit-market-all] request failed', error);
+      console.error("[upbit-market-all] request failed", error);
       return cachedMarkets;
     } finally {
-      inFlightRef.current['upbit-market-all'] = false;
+      inFlightRef.current["upbit-market-all"] = false;
     }
   };
 
   const fetchUpbitTickers = async () => {
-    await runRequest('upbit-table', async () => {
+    await runRequest("upbit-table", async () => {
       const krwMarkets = await fetchUpbitMarkets(false);
       if (krwMarkets.length === 0) return;
 
-      const tickersRes = await axios.get('/api/upbit', {
-        params: { markets: krwMarkets.join(',') },
+      const tickersRes = await axios.get("/api/upbit", {
+        params: { markets: krwMarkets.join(",") },
       });
 
       const tickers = tickersRes.data.map((item: any) => ({
@@ -330,12 +357,12 @@ const displayedHistoryData = useMemo(() => {
   };
 
   const fetchBithumbTickers = async () => {
-    await runRequest('bithumb-table', async () => {
-      const res = await axios.get('/api/bithumb/ticker');
+    await runRequest("bithumb-table", async () => {
+      const res = await axios.get("/api/bithumb/ticker");
       const data = res.data.data;
 
       const tickers = Object.keys(data)
-        .filter((key) => key !== 'date')
+        .filter((key) => key !== "date")
         .map((key) => ({
           market: `KRW-${key}`,
           trade_price: parseFloat(data[key].closing_price),
@@ -348,16 +375,18 @@ const displayedHistoryData = useMemo(() => {
   };
 
   const fetchBinanceTickers = async () => {
-    await runRequest('binance-table', async () => {
-      const res = await axios.get('https://api.binance.com/api/v3/ticker/price');
+    await runRequest("binance-table", async () => {
+      const res = await axios.get(
+        "https://api.binance.com/api/v3/ticker/price",
+      );
       setBinanceTickers((prev) => triggerFlashOnChange(prev, res.data));
     });
   };
 
   const fetchBybitTickers = async () => {
-    await runRequest('bybit-table', async () => {
+    await runRequest("bybit-table", async () => {
       const res = await axios.get(
-        'https://api.bybit.com/v5/market/tickers?category=spot'
+        "https://api.bybit.com/v5/market/tickers?category=spot",
       );
       const tickers = res.data.result.list.map((item: any) => ({
         symbol: item.symbol,
@@ -367,16 +396,19 @@ const displayedHistoryData = useMemo(() => {
     });
   };
 
-  const calculateKimp = (krwPrice: number, foreignPrice: number | null): number | null => {
+  const calculateKimp = (
+    krwPrice: number,
+    foreignPrice: number | null,
+  ): number | null => {
     if (foreignPrice === null || !usdFuturesPrice) return null;
     const usdToKrwPrice = foreignPrice * usdFuturesPrice;
     return ((krwPrice - usdToKrwPrice) / usdToKrwPrice) * 100;
   };
 
   const getForeignPrice = (symbol: string): number | null => {
-    const symbolName = symbol.replace('KRW-', '').toUpperCase() + 'USDT';
+    const symbolName = symbol.replace("KRW-", "").toUpperCase() + "USDT";
 
-    if (foreignExchange === 'Binance') {
+    if (foreignExchange === "Binance") {
       const ticker = binanceTickers.find((t) => t.symbol === symbolName);
       return ticker ? parseFloat(ticker.price) : null;
     }
@@ -387,33 +419,36 @@ const displayedHistoryData = useMemo(() => {
 
   const handleSort = (key: typeof sortKey) => {
     if (sortKey === key) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
       setSortKey(key);
-      setSortOrder('desc');
+      setSortOrder("desc");
     }
   };
 
   const renderSortArrow = (key: typeof sortKey) => {
-    if (sortKey !== key) return '↕';
-    return sortOrder === 'asc' ? '▲' : '▼';
+    if (sortKey !== key) return "↕";
+    return sortOrder === "asc" ? "▲" : "▼";
   };
 
-  const getDashboardValueClass = (key: string, baseColorClass = 'text-white') => {
+  const getDashboardValueClass = (
+    key: string,
+    baseColorClass = "text-white",
+  ) => {
     const isFlashing = dashboardFlashStates[key];
 
     return [
-      'inline-block rounded-md px-1.5 transition-all duration-300 whitespace-nowrap',
+      "inline-block rounded-md px-1.5 transition-all duration-300 whitespace-nowrap",
       baseColorClass,
-      isFlashing ? 'bg-yellow-400/20 text-yellow-300' : '',
-    ].join(' ');
+      isFlashing ? "bg-yellow-400/20 text-yellow-300" : "",
+    ].join(" ");
   };
 
   const renderFlashDot = (key: string) => {
     return (
       <span
         className={`ml-2 inline-block h-2 w-2 rounded-full bg-green-400 align-middle transition-opacity duration-300 ${
-          dashboardFlashStates[key] ? 'opacity-100' : 'opacity-0'
+          dashboardFlashStates[key] ? "opacity-100" : "opacity-0"
         }`}
       />
     );
@@ -423,77 +458,75 @@ const displayedHistoryData = useMemo(() => {
     return `${Math.floor(value / 100000000)}억`;
   };
 
-const loadHistory = async (
-  intervalKey: IntervalKey = selectedInterval
-) => {
-  try {
-    setChartStatus("히스토리 로딩 중");
+  const loadHistory = async (intervalKey: IntervalKey = selectedInterval) => {
+    try {
+      setChartStatus("히스토리 로딩 중");
 
-    const res = await fetch(`/api/kimp-history?range=${intervalKey}`, {
-      cache: "no-store",
-    });
+      const res = await fetch(`/api/kimp-history?range=${intervalKey}`, {
+        cache: "no-store",
+      });
 
-    const json = await res.json();
+      const json = await res.json();
 
-    if (!res.ok) {
-      setChartStatus(`히스토리 실패: ${json.error || "API 실패"}`);
-      return;
+      if (!res.ok) {
+        setChartStatus(`히스토리 실패: ${json.error || "API 실패"}`);
+        return;
+      }
+
+      const normalized = normalizeHistory(json);
+
+      setRawHistoryData(normalized);
+
+      setChartStatus(
+        `히스토리 로드 완료: ${intervalKey} ${normalized.length}개`,
+      );
+    } catch (error: any) {
+      setChartStatus(`히스토리 에러: ${error?.message ?? String(error)}`);
     }
-
-    const normalized = normalizeHistory(json);
-
-    setRawHistoryData(normalized);
-
-    setChartStatus(
-      `히스토리 로드 완료: ${intervalKey} ${normalized.length}개`
-    );
-  } catch (error: any) {
-    setChartStatus(`히스토리 에러: ${error?.message ?? String(error)}`);
-  }
-};
+  };
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
-const chart = createChart(chartContainerRef.current, {
-  height: 390,
-  autoSize: true,
-  handleScroll: {
-    mouseWheel: true,
-    pressedMouseMove: true,
-    horzTouchDrag: true,
-    vertTouchDrag: true,
-  },
-  handleScale: {
-    axisPressedMouseMove: true,
-    mouseWheel: true,
-    pinch: true,
-  },
-localization: {
-  locale: 'ko-KR',
-  timeFormatter: (time: number) => {
-    return new Date(time * 1000).toLocaleString('ko-KR', {
-      timeZone: 'Asia/Seoul',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  },
-},
+    const chart = createChart(chartContainerRef.current, {
+      height: 390,
+      autoSize: true,
+      handleScroll: {
+        mouseWheel: true,
+        pressedMouseMove: true,
+        horzTouchDrag: true,
+        vertTouchDrag: true,
+      },
+      handleScale: {
+        axisPressedMouseMove: true,
+        mouseWheel: true,
+        pinch: true,
+      },
+      localization: {
+        locale: "ko-KR",
+        timeFormatter: (time: number) => {
+          return new Date(time * 1000).toLocaleString("ko-KR", {
+            timeZone: "Asia/Seoul",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+        },
+      },
       layout: {
-        background: { color: '#111827' },
-        textColor: '#d1d5db',
+        background: { color: "#111827" },
+        textColor: "#d1d5db",
       },
       grid: {
-        vertLines: { color: '#1f2937' },
-        horzLines: { color: '#1f2937' },
+        vertLines: { color: "#1f2937" },
+        horzLines: { color: "#1f2937" },
       },
       rightPriceScale: {
-        borderColor: '#374151',
+        borderColor: "#374151",
       },
       timeScale: {
-        borderColor: '#374151',
+        borderColor: "#374151",
         timeVisible: true,
         secondsVisible: false,
       },
@@ -503,10 +536,10 @@ localization: {
     });
 
     const lineSeries = chart.addSeries(LineSeries, {
-      color: '#facc15',
+      color: "#facc15",
       lineWidth: 2,
       priceFormat: {
-        type: 'custom',
+        type: "custom",
         formatter: (price: number) => `${price.toFixed(3)}%`,
       },
     });
@@ -520,11 +553,11 @@ localization: {
       chart.timeScale().fitContent();
     };
 
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
     handleResize();
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener("resize", handleResize);
       chart.remove();
       chartRef.current = null;
       lineSeriesRef.current = null;
@@ -535,8 +568,6 @@ localization: {
     if (!lineSeriesRef.current || !chartRef.current) return;
 
     lineSeriesRef.current.setData(displayedHistoryData);
-
-
   }, [displayedHistoryData]);
 
   useEffect(() => {
@@ -561,11 +592,11 @@ localization: {
       if (!document.hidden) fetchFastData();
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       clearInterval(interval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [foreignExchange]);
 
@@ -582,23 +613,25 @@ localization: {
       if (!document.hidden) fetchNaver();
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       clearInterval(interval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
   useEffect(() => {
+    if (!ENABLE_PREMIUM_TABLE) return;
+
     const fetchSelectedTable = async () => {
       if (document.hidden) return;
 
       await Promise.all([
-        domesticExchange === 'Upbit'
+        domesticExchange === "Upbit"
           ? fetchUpbitTickers()
           : fetchBithumbTickers(),
-        foreignExchange === 'Binance'
+        foreignExchange === "Binance"
           ? fetchBinanceTickers()
           : fetchBybitTickers(),
       ]);
@@ -611,16 +644,17 @@ localization: {
       if (!document.hidden) fetchSelectedTable();
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       clearInterval(interval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [domesticExchange, foreignExchange]);
 
   useEffect(() => {
-    if (domesticExchange !== 'Upbit') return;
+    if (!ENABLE_PREMIUM_TABLE) return;
+    if (domesticExchange !== "Upbit") return;
 
     const refreshMarketList = () => {
       if (document.hidden) return;
@@ -632,7 +666,7 @@ localization: {
     return () => clearInterval(interval);
   }, [domesticExchange]);
 
-  const tickers = domesticExchange === 'Upbit' ? upbitTickers : bithumbTickers;
+  const tickers = domesticExchange === "Upbit" ? upbitTickers : bithumbTickers;
 
   const sortedTickers: (TickerData & {
     foreign_price: number | null;
@@ -641,7 +675,10 @@ localization: {
     .filter((ticker) => ticker.trade_price !== null)
     .map((ticker) => {
       const foreignPrice = getForeignPrice(ticker.market);
-      const kimp = foreignPrice !== null ? calculateKimp(ticker.trade_price, foreignPrice) : null;
+      const kimp =
+        foreignPrice !== null
+          ? calculateKimp(ticker.trade_price, foreignPrice)
+          : null;
 
       return {
         ...ticker,
@@ -650,9 +687,9 @@ localization: {
       };
     })
     .sort((a, b) => {
-      const order = sortOrder === 'asc' ? 1 : -1;
+      const order = sortOrder === "asc" ? 1 : -1;
 
-      if (sortKey === 'market') {
+      if (sortKey === "market") {
         return a.market.localeCompare(b.market) * order;
       }
 
@@ -662,7 +699,7 @@ localization: {
       return (Number(aValue) - Number(bValue)) * order;
     });
 
-  const btcTicker = topUpbitTickers.find((t) => t.market === 'KRW-BTC');
+  const btcTicker = topUpbitTickers.find((t) => t.market === "KRW-BTC");
   const btcForeignPrice = topForeignBtcPrice;
 
   const btcKimp =
@@ -675,11 +712,11 @@ localization: {
       ? btcTicker.trade_price / btcForeignPrice
       : null;
 
-  const upbitUsdtTicker = topUpbitTickers.find((t) => t.market === 'KRW-USDT');
+  const upbitUsdtTicker = topUpbitTickers.find((t) => t.market === "KRW-USDT");
 
   const usdtKimp =
     upbitUsdtTicker && usdFuturesPrice
-      ? ((upbitUsdtTicker.trade_price / usdFuturesPrice) - 1) * 100
+      ? (upbitUsdtTicker.trade_price / usdFuturesPrice - 1) * 100
       : null;
 
   const currentSpread =
@@ -699,7 +736,11 @@ localization: {
     Object.entries(currentValues).forEach(([key, value]) => {
       const previousValue = previousDashboardValuesRef.current[key];
 
-      if (previousValue !== undefined && value !== null && previousValue !== value) {
+      if (
+        previousValue !== undefined &&
+        value !== null &&
+        previousValue !== value
+      ) {
         setDashboardFlashStates((prev) => ({ ...prev, [key]: true }));
 
         setTimeout(() => {
@@ -728,23 +769,29 @@ localization: {
 
     const saveKimp = async () => {
       try {
-        setLastSavedAt('저장 중');
+        setLastSavedAt("저장 중");
 
-        const res = await fetch('/api/save-kimp', {
-          method: 'GET',
-          cache: 'no-store',
+        const res = await fetch("/api/save-kimp", {
+          method: "GET",
+          cache: "no-store",
         });
 
         const json = await res.json();
 
         if (!res.ok || !json.success) {
-          setLastSavedAt(`저장 실패: ${json.error || json.message || 'API 실패'}`);
+          setLastSavedAt(
+            `저장 실패: ${json.error || json.message || "API 실패"}`,
+          );
           return;
         }
 
         const savedRow = Array.isArray(json.data) ? json.data[0] : json.data;
 
-        if (savedRow?.created_at && savedRow?.kimp !== null && savedRow?.kimp !== undefined) {
+        if (
+          savedRow?.created_at &&
+          savedRow?.kimp !== null &&
+          savedRow?.kimp !== undefined
+        ) {
           const newPoint: LineData = {
             time: toUnixTime(savedRow.created_at),
             value: Number(Number(savedRow.kimp).toFixed(4)),
@@ -755,14 +802,16 @@ localization: {
             [...prev, newPoint].forEach((point) => {
               map.set(Number(point.time), point);
             });
-            return Array.from(map.values()).sort((a, b) => Number(a.time) - Number(b.time));
+            return Array.from(map.values()).sort(
+              (a, b) => Number(a.time) - Number(b.time),
+            );
           });
 
-          setLastSavedAt(new Date(savedRow.created_at).toLocaleString('ko-KR'));
+          setLastSavedAt(new Date(savedRow.created_at).toLocaleString("ko-KR"));
           return;
         }
 
-        setLastSavedAt(new Date().toLocaleString('ko-KR'));
+        setLastSavedAt(new Date().toLocaleString("ko-KR"));
       } catch (error: any) {
         setLastSavedAt(`저장 에러: ${error?.message ?? String(error)}`);
       }
@@ -774,25 +823,27 @@ localization: {
   return (
     <>
       <a
-  href="/admin"
-  style={{
-    position: 'fixed',
-    top: '12px',
-    right: '12px',
-    zIndex: 9999,
-    background: '#2563eb',
-    color: '#fff',
-    padding: '8px 14px',
-    borderRadius: '8px',
-    textDecoration: 'none',
-    fontWeight: 'bold',
-  }}
->
-  관리자
-</a>
+        href="/admin"
+        style={{
+          position: "fixed",
+          top: "12px",
+          right: "12px",
+          zIndex: 9999,
+          background: "#2563eb",
+          color: "#fff",
+          padding: "8px 14px",
+          borderRadius: "8px",
+          textDecoration: "none",
+          fontWeight: "bold",
+        }}
+      >
+        관리자
+      </a>
       <div className="min-h-screen bg-gray-900 text-white p-3 space-y-4">
-        <div className={`text-sm md:text-base font-bold mb-2 text-center transition duration-300 ${isFlashingUpdate ? 'text-yellow-400' : 'text-gray-300'}`}>
-          실시간 업데이트: {lastUpdated || '로딩 중...'}
+        <div
+          className={`text-sm md:text-base font-bold mb-2 text-center transition duration-300 ${isFlashingUpdate ? "text-yellow-400" : "text-gray-300"}`}
+        >
+          실시간 업데이트: {lastUpdated || "로딩 중..."}
         </div>
 
         <div className="flex flex-col md:flex-row w-full max-w-[1280px] mx-auto justify-center items-stretch gap-3">
@@ -800,68 +851,101 @@ localization: {
             <div className="w-full h-full border border-gray-700 bg-gray-800/40 px-3 md:px-4 py-2">
               {[
                 {
-                  key: 'naverExchange',
-                  label: 'Naver USD/KRW',
-                  value: naverExchangeRate ? '₩' + naverExchangeRate.toLocaleString() : 'Loading...',
-                  color: 'text-white',
+                  key: "naverExchange",
+                  label: "Naver USD/KRW",
+                  value: naverExchangeRate
+                    ? "₩" + naverExchangeRate.toLocaleString()
+                    : "Loading...",
+                  color: "text-white",
                   dot: false,
-                  labelColor: 'text-blue-400',
+                  labelColor: "text-blue-400",
                 },
                 {
-                  key: 'usdFutures',
-                  label: 'Current USD Futures',
-                  value: usdFuturesPrice ? '₩' + usdFuturesPrice.toLocaleString() : 'Loading...',
-                  color: 'text-white',
+                  key: "usdFutures",
+                  label: "Current USD Futures",
+                  value: usdFuturesPrice
+                    ? "₩" + usdFuturesPrice.toLocaleString()
+                    : "Loading...",
+                  color: "text-white",
                   dot: true,
-                  labelColor: 'text-blue-400',
+                  labelColor: "text-blue-400",
                 },
                 {
-                  key: 'currentUsdt',
-                  label: 'Current USDT',
-                  value: upbitUsdtTicker ? '₩' + upbitUsdtTicker.trade_price.toLocaleString() : 'Loading...',
-                  color: 'text-white',
+                  key: "currentUsdt",
+                  label: "Current USDT",
+                  value: upbitUsdtTicker
+                    ? "₩" + upbitUsdtTicker.trade_price.toLocaleString()
+                    : "Loading...",
+                  color: "text-white",
                   dot: true,
-                  labelColor: 'text-blue-400',
-                  link: 'https://upbit.com/exchange?code=CRIX.UPBIT.KRW-USDT',
+                  labelColor: "text-blue-400",
+                  link: "https://upbit.com/exchange?code=CRIX.UPBIT.KRW-USDT",
                 },
                 {
-                  key: 'currentKimp',
-                  label: 'Current Kimp',
-                  value: usdtKimp !== null ? usdtKimp.toFixed(3) + '%' : '계산 중...',
-                  color: usdtKimp !== null ? (usdtKimp >= 0 ? 'text-red-500' : 'text-blue-500') : 'text-gray-400',
+                  key: "currentKimp",
+                  label: "Current Kimp",
+                  value:
+                    usdtKimp !== null
+                      ? usdtKimp.toFixed(3) + "%"
+                      : "계산 중...",
+                  color:
+                    usdtKimp !== null
+                      ? usdtKimp >= 0
+                        ? "text-red-500"
+                        : "text-blue-500"
+                      : "text-gray-400",
                   dot: true,
-                  labelColor: 'text-blue-400',
+                  labelColor: "text-blue-400",
                 },
                 {
-                  key: 'currentSpread',
-                  label: 'Current Spread',
-                  value: currentSpread !== null ? currentSpread.toFixed(2) : '계산 중...',
-                  color: currentSpread !== null ? (currentSpread >= 0 ? 'text-red-500' : 'text-blue-500') : 'text-gray-400',
+                  key: "currentSpread",
+                  label: "Current Spread",
+                  value:
+                    currentSpread !== null
+                      ? currentSpread.toFixed(2)
+                      : "계산 중...",
+                  color:
+                    currentSpread !== null
+                      ? currentSpread >= 0
+                        ? "text-red-500"
+                        : "text-blue-500"
+                      : "text-gray-400",
                   dot: true,
-                  labelColor: 'text-blue-400',
+                  labelColor: "text-blue-400",
                 },
                 {
-                  key: 'btcDivide',
-                  label: 'BTC FX Rate',
-                  value: btcDivide !== null ? '₩' + btcDivide.toFixed(1) : 'Calculating...',
-                  color: 'text-white',
+                  key: "btcDivide",
+                  label: "BTC FX Rate",
+                  value:
+                    btcDivide !== null
+                      ? "₩" + btcDivide.toFixed(1)
+                      : "Calculating...",
+                  color: "text-white",
                   dot: false,
-                  labelColor: 'text-gray-200',
+                  labelColor: "text-gray-200",
                 },
                 {
-                  key: 'btcKimp',
-                  label: 'BTC kimp',
-                  value: btcKimp !== null ? btcKimp.toFixed(2) + '%' : '계산 중...',
-                  color: btcKimp !== null ? (btcKimp >= 0 ? 'text-red-500' : 'text-blue-500') : 'text-gray-400',
+                  key: "btcKimp",
+                  label: "BTC kimp",
+                  value:
+                    btcKimp !== null ? btcKimp.toFixed(2) + "%" : "계산 중...",
+                  color:
+                    btcKimp !== null
+                      ? btcKimp >= 0
+                        ? "text-red-500"
+                        : "text-blue-500"
+                      : "text-gray-400",
                   dot: true,
-                  labelColor: 'text-gray-200',
+                  labelColor: "text-gray-200",
                 },
               ].map((item) => (
                 <div
                   key={item.key}
                   className="grid grid-cols-[165px_1fr] md:grid-cols-[230px_1fr] lg:grid-cols-[240px_1fr] items-center min-h-[38px] md:min-h-[44px] border-b border-gray-700 last:border-b-0"
                 >
-                  <div className={`text-[17px] md:text-[22px] lg:text-[24px] font-extrabold leading-none whitespace-nowrap ${item.labelColor}`}>
+                  <div
+                    className={`text-[17px] md:text-[22px] lg:text-[24px] font-extrabold leading-none whitespace-nowrap ${item.labelColor}`}
+                  >
                     {item.link ? (
                       <a
                         href={item.link}
@@ -882,7 +966,11 @@ localization: {
                     >
                       {item.value}
                     </span>
-                    {item.dot ? renderFlashDot(item.key) : <span className="ml-2 inline-block h-2.5 w-2.5" />}
+                    {item.dot ? (
+                      renderFlashDot(item.key)
+                    ) : (
+                      <span className="ml-2 inline-block h-2.5 w-2.5" />
+                    )}
                   </div>
                 </div>
               ))}
@@ -890,12 +978,30 @@ localization: {
           </div>
 
           <div className="flex flex-col gap-2 justify-center items-stretch flex-shrink-0 w-full md:w-[560px] lg:w-[610px]">
-            <a href="https://accounts.binance.com/register?ref=NJ3Y7YUZ" target="_blank" rel="noopener noreferrer" className="block w-full">
-              <img src="/binance-banner2.png" alt="바이낸스 배너" className="w-full h-[110px] md:h-[160px] object-contain" />
+            <a
+              href="https://accounts.binance.com/register?ref=NJ3Y7YUZ"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full"
+            >
+              <img
+                src="/binance-banner2.png"
+                alt="바이낸스 배너"
+                className="w-full h-[110px] md:h-[160px] object-contain"
+              />
             </a>
 
-            <a href="https://www.bybit.com/invite?ref=OLVJA" target="_blank" rel="noopener noreferrer" className="block w-full">
-              <img src="/bybit-banner2.png" alt="바이빗 배너" className="w-full h-[110px] md:h-[160px] object-contain" />
+            <a
+              href="https://www.bybit.com/invite?ref=OLVJA"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full"
+            >
+              <img
+                src="/bybit-banner2.png"
+                alt="바이빗 배너"
+                className="w-full h-[110px] md:h-[160px] object-contain"
+              />
             </a>
           </div>
         </div>
@@ -912,48 +1018,58 @@ localization: {
               </p>
 
               <div className="flex flex-wrap gap-2 mt-2">
-                {(['1m', '5m', '15m', '1h', '4h'] as IntervalKey[]).map((key) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => {
-                      setSelectedInterval(key);
-                    }}
-                    className={`px-3 py-1 rounded border text-sm ${
-                      selectedInterval === key
-                        ? 'bg-yellow-400 text-black border-yellow-400'
-                        : 'bg-gray-900 text-white border-gray-600'
-                    }`}
-                  >
-                    {intervalLabels[key]}
-                  </button>
-                ))}
+                {(["1m", "5m", "15m", "1h", "4h"] as IntervalKey[]).map(
+                  (key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => {
+                        setSelectedInterval(key);
+                      }}
+                      className={`px-3 py-1 rounded border text-sm ${
+                        selectedInterval === key
+                          ? "bg-yellow-400 text-black border-yellow-400"
+                          : "bg-gray-900 text-white border-gray-600"
+                      }`}
+                    >
+                      {intervalLabels[key]}
+                    </button>
+                  ),
+                )}
 
                 <button
-  type="button"
-  onClick={() => loadHistory(selectedInterval)}
-  className="px-3 py-1 rounded border border-gray-600 bg-gray-900 text-white text-sm"
->
-  refresh
-</button>
+                  type="button"
+                  onClick={() => loadHistory(selectedInterval)}
+                  className="px-3 py-1 rounded border border-gray-600 bg-gray-900 text-white text-sm"
+                >
+                  refresh
+                </button>
               </div>
             </div>
 
             <div className="text-right shrink-0 w-full md:w-[300px] overflow-visible">
-              <div className="text-sm md:text-base text-gray-400"> USDT kimp</div>
+              <div className="text-sm md:text-base text-gray-400">
+                {" "}
+                USDT kimp
+              </div>
               <div className="text-3xl md:text-[38px] font-black whitespace-nowrap leading-tight tabular-nums">
                 <span
                   className={getDashboardValueClass(
-                    'currentKimp',
-                    usdtKimp !== null ? (usdtKimp >= 0 ? 'text-red-500' : 'text-blue-500') : 'text-gray-400'
+                    "currentKimp",
+                    usdtKimp !== null
+                      ? usdtKimp >= 0
+                        ? "text-red-500"
+                        : "text-blue-500"
+                      : "text-gray-400",
                   )}
                 >
-                  {usdtKimp !== null ? usdtKimp.toFixed(3) + '%' : '계산 중...'}
+                  {usdtKimp !== null ? usdtKimp.toFixed(3) + "%" : "계산 중..."}
                 </span>
-                {renderFlashDot('currentKimp')}
+                {renderFlashDot("currentKimp")}
               </div>
               <div className="text-[11px] text-gray-500 mt-0.5">
-                {intervalLabels[selectedInterval]} 차트 {displayedHistoryData.length}개
+                {intervalLabels[selectedInterval]} 차트{" "}
+                {displayedHistoryData.length}개
               </div>
               <div className="text-[11px] text-gray-500 mt-0.5">
                 마지막 저장: {lastSavedAt}
@@ -964,107 +1080,153 @@ localization: {
           <div ref={chartContainerRef} className="w-full h-[390px]" />
         </div>
 
-        <h1 className="text-2xl font-bold mb-3 text-center">Real-Time Kimchi Premium</h1>
+        {ENABLE_PREMIUM_TABLE && (
+          <>
+            <h1 className="text-2xl font-bold mb-3 text-center">
+              Real-Time Kimchi Premium
+            </h1>
 
-        <div className="mb-2 text-center space-x-4">
-          <label className="font-semibold">Korean Exchange:</label>
-          <select
-            value={domesticExchange}
-            onChange={(e) => setDomesticExchange(e.target.value as 'Upbit' | 'Bithumb')}
-            className="border rounded p-1 text-black"
-          >
-            <option value="Upbit">upbit</option>
-            <option value="Bithumb">bithumb</option>
-          </select>
+            <div className="mb-2 text-center space-x-4">
+              <label className="font-semibold">Korean Exchange:</label>
+              <select
+                value={domesticExchange}
+                onChange={(e) =>
+                  setDomesticExchange(e.target.value as "Upbit" | "Bithumb")
+                }
+                className="border rounded p-1 text-black"
+              >
+                <option value="Upbit">upbit</option>
+                <option value="Bithumb">bithumb</option>
+              </select>
 
-          <label className="font-semibold ml-4">Global Exchange:</label>
-          <select
-            value={foreignExchange}
-            onChange={(e) => setForeignExchange(e.target.value as 'Binance' | 'Bybit')}
-            className="border rounded p-1 text-black"
-          >
-            <option value="Binance">binance</option>
-            <option value="Bybit">bybit</option>
-          </select>
-        </div>
+              <label className="font-semibold ml-4">Global Exchange:</label>
+              <select
+                value={foreignExchange}
+                onChange={(e) =>
+                  setForeignExchange(e.target.value as "Binance" | "Bybit")
+                }
+                className="border rounded p-1 text-black"
+              >
+                <option value="Binance">binance</option>
+                <option value="Bybit">bybit</option>
+              </select>
+            </div>
 
-        <div className="w-full max-w-5xl mx-auto">
-          <div className="overflow-x-auto">
-            <table className="w-full border border-gray-700 text-sm md:text-sm text-xs leading-tight">
-              <thead>
-                <tr className="bg-gray-800">
-                  <th className="md:p-2 p-1 text-left cursor-pointer" onClick={() => handleSort('market')}>
-                    coin {renderSortArrow('market')}
-                  </th>
-                  <th className="md:p-2 p-1 text-right cursor-pointer" onClick={() => handleSort('change_rate')}>
-                    change(24h) {renderSortArrow('change_rate')}
-                  </th>
-                  <th className="md:p-2 p-1 text-right cursor-pointer" onClick={() => handleSort('acc_trade_price_24h')}>
-                    volume {renderSortArrow('acc_trade_price_24h')}
-                  </th>
-                  <th className="md:p-2 p-1 text-right cursor-pointer" onClick={() => handleSort('trade_price')}>
-                    {domesticExchange} price {renderSortArrow('trade_price')}
-                  </th>
-                  <th className="md:p-2 p-1 text-right cursor-pointer" onClick={() => handleSort('foreign_price')}>
-                    {foreignExchange} price {renderSortArrow('foreign_price')}
-                  </th>
-                  <th className="md:p-2 p-1 text-right cursor-pointer" onClick={() => handleSort('kimp')}>
-                    kimp(%) {renderSortArrow('kimp')}
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {sortedTickers.map((ticker) => {
-                  const isFlashing = flashStates[ticker.market];
-                  const flashClass = isFlashing ? 'text-yellow-400' : '';
-
-                  return (
-                    <tr key={ticker.market}>
-                      <td className="p-2 flex items-center space-x-2">
-                        <img
-                          src={`https://static.upbit.com/logos/${ticker.market.replace('KRW-', '')}.png`}
-                          alt={ticker.market.replace('KRW-', '')}
-                          className="w-5 h-5"
-                          onError={(e) => (e.currentTarget.style.display = 'none')}
-                        />
-                        <span className={`${ticker.market.replace('KRW-', '').length > 6 ? 'text-[10px]' : 'text-xs'}`}>
-                          {ticker.market.replace('KRW-', '')}
-                        </span>
-                      </td>
-
-                      <td className={`p-2 text-right ${ticker.change_rate >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-                        {typeof ticker.change_rate === 'number' ? ticker.change_rate.toFixed(2) + '%' : 'N/A'}
-                      </td>
-
-                      <td className="md:p-2 p-1 text-right">
-                        {formatToEok(ticker.acc_trade_price_24h)}
-                      </td>
-
-                      <td className="md:p-2 p-1 text-right">
-                        <span className={flashClass}>
-                          {ticker.trade_price !== null ? ticker.trade_price.toLocaleString() + ' ₩' : 'N/A'}
-                        </span>
-                      </td>
-
-                      <td className="md:p-2 p-1 text-right">
-                        <span className={flashClass}>
-                          {ticker.foreign_price !== null ? ticker.foreign_price.toFixed(2) + ' $' : 'N/A'}
-                        </span>
-                      </td>
-
-                      <td className="md:p-2 p-1 text-right">
-                        <span className={`${flashClass} ${ticker.kimp !== null ? (ticker.kimp >= 0 ? 'text-red-500' : 'text-blue-500') : ''}`}>
-                          {ticker.kimp !== null ? ticker.kimp.toFixed(2) + '%' : 'N/A'}
-                        </span>
-                      </td>
+            <div className="w-full max-w-5xl mx-auto">
+              <div className="overflow-x-auto">
+                <table className="w-full border border-gray-700 text-sm md:text-sm text-xs leading-tight">
+                  <thead>
+                    <tr className="bg-gray-800">
+                      <th
+                        className="md:p-2 p-1 text-left cursor-pointer"
+                        onClick={() => handleSort("market")}
+                      >
+                        coin {renderSortArrow("market")}
+                      </th>
+                      <th
+                        className="md:p-2 p-1 text-right cursor-pointer"
+                        onClick={() => handleSort("change_rate")}
+                      >
+                        change(24h) {renderSortArrow("change_rate")}
+                      </th>
+                      <th
+                        className="md:p-2 p-1 text-right cursor-pointer"
+                        onClick={() => handleSort("acc_trade_price_24h")}
+                      >
+                        volume {renderSortArrow("acc_trade_price_24h")}
+                      </th>
+                      <th
+                        className="md:p-2 p-1 text-right cursor-pointer"
+                        onClick={() => handleSort("trade_price")}
+                      >
+                        {domesticExchange} price{" "}
+                        {renderSortArrow("trade_price")}
+                      </th>
+                      <th
+                        className="md:p-2 p-1 text-right cursor-pointer"
+                        onClick={() => handleSort("foreign_price")}
+                      >
+                        {foreignExchange} price{" "}
+                        {renderSortArrow("foreign_price")}
+                      </th>
+                      <th
+                        className="md:p-2 p-1 text-right cursor-pointer"
+                        onClick={() => handleSort("kimp")}
+                      >
+                        kimp(%) {renderSortArrow("kimp")}
+                      </th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                  </thead>
+
+                  <tbody>
+                    {sortedTickers.map((ticker) => {
+                      const isFlashing = flashStates[ticker.market];
+                      const flashClass = isFlashing ? "text-yellow-400" : "";
+
+                      return (
+                        <tr key={ticker.market}>
+                          <td className="p-2 flex items-center space-x-2">
+                            <img
+                              src={`https://static.upbit.com/logos/${ticker.market.replace("KRW-", "")}.png`}
+                              alt={ticker.market.replace("KRW-", "")}
+                              className="w-5 h-5"
+                              onError={(e) =>
+                                (e.currentTarget.style.display = "none")
+                              }
+                            />
+                            <span
+                              className={`${ticker.market.replace("KRW-", "").length > 6 ? "text-[10px]" : "text-xs"}`}
+                            >
+                              {ticker.market.replace("KRW-", "")}
+                            </span>
+                          </td>
+
+                          <td
+                            className={`p-2 text-right ${ticker.change_rate >= 0 ? "text-red-500" : "text-blue-500"}`}
+                          >
+                            {typeof ticker.change_rate === "number"
+                              ? ticker.change_rate.toFixed(2) + "%"
+                              : "N/A"}
+                          </td>
+
+                          <td className="md:p-2 p-1 text-right">
+                            {formatToEok(ticker.acc_trade_price_24h)}
+                          </td>
+
+                          <td className="md:p-2 p-1 text-right">
+                            <span className={flashClass}>
+                              {ticker.trade_price !== null
+                                ? ticker.trade_price.toLocaleString() + " ₩"
+                                : "N/A"}
+                            </span>
+                          </td>
+
+                          <td className="md:p-2 p-1 text-right">
+                            <span className={flashClass}>
+                              {ticker.foreign_price !== null
+                                ? ticker.foreign_price.toFixed(2) + " $"
+                                : "N/A"}
+                            </span>
+                          </td>
+
+                          <td className="md:p-2 p-1 text-right">
+                            <span
+                              className={`${flashClass} ${ticker.kimp !== null ? (ticker.kimp >= 0 ? "text-red-500" : "text-blue-500") : ""}`}
+                            >
+                              {ticker.kimp !== null
+                                ? ticker.kimp.toFixed(2) + "%"
+                                : "N/A"}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="text-center text-s text-gray-500 space-y-4 mt-8">
@@ -1088,9 +1250,18 @@ localization: {
       </div>
 
       <footer className="w-full border-t border-gray-700 mt-10 pt-4 pb-6 text-center text-xs text-gray-400 space-y-2">
-        <p>※ 본 사이트는 투자 권유 또는 자문을 제공하지 않으며, 투자 판단 및 결과는 이용자 본인의 책임입니다.</p>
-        <p>※ 표기되는 김프 및 시세 정보는 참고용으로 지연 또는 오차가 발생할 수 있습니다.</p>
-        <p>※ 일부 링크는 제휴(레퍼럴) 링크로 수익이 발생할 수 있으며, 본 사이트는 금융기관과 무관한 개인 개발 서비스입니다.</p>
+        <p>
+          ※ 본 사이트는 투자 권유 또는 자문을 제공하지 않으며, 투자 판단 및
+          결과는 이용자 본인의 책임입니다.
+        </p>
+        <p>
+          ※ 표기되는 김프 및 시세 정보는 참고용으로 지연 또는 오차가 발생할 수
+          있습니다.
+        </p>
+        <p>
+          ※ 일부 링크는 제휴(레퍼럴) 링크로 수익이 발생할 수 있으며, 본 사이트는
+          금융기관과 무관한 개인 개발 서비스입니다.
+        </p>
         <p>※ 문의 e18901@gmail.com</p>
       </footer>
     </>
