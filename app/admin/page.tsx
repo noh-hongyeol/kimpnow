@@ -296,8 +296,14 @@ export default function AdminPage() {
     loadSystemStatus();
     loadCurrentPrices();
 
-    const statusTimer = setInterval(loadSystemStatus, 60000);
-    const priceTimer = setInterval(loadCurrentPrices, 60000);
+    const isLocal =
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1';
+
+    const pollMs = isLocal ? 10000 : 60000;
+
+    const statusTimer = setInterval(loadSystemStatus, pollMs);
+    const priceTimer = setInterval(loadCurrentPrices, pollMs);
 
     return () => {
       clearInterval(statusTimer);

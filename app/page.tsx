@@ -55,9 +55,14 @@ const intervalLabels: Record<IntervalKey, string> = {
   "4h": "4h",
 };
 
-const FAST_POLL_MS = 60_000;
-const NAVER_POLL_MS = 60_000;
-const PREMIUM_TABLE_POLL_MS = 60_000;
+const IS_LOCAL =
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1");
+
+const FAST_POLL_MS = IS_LOCAL ? 10_000 : 60_000;
+const NAVER_POLL_MS = IS_LOCAL ? 10_000 : 60_000;
+const PREMIUM_TABLE_POLL_MS = IS_LOCAL ? 10_000 : 60_000;
 const MARKET_ALL_POLL_MS = 10 * 60_000;
 const ENABLE_PREMIUM_TABLE = false;
 
