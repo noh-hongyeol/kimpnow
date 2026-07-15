@@ -296,8 +296,8 @@ export default function AdminPage() {
     loadSystemStatus();
     loadCurrentPrices();
 
-    const statusTimer = setInterval(loadSystemStatus, 10000);
-    const priceTimer = setInterval(loadCurrentPrices, 10000);
+    const statusTimer = setInterval(loadSystemStatus, 60000);
+    const priceTimer = setInterval(loadCurrentPrices, 60000);
 
     return () => {
       clearInterval(statusTimer);
